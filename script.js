@@ -14,7 +14,6 @@ let prevValues = [];
 let firstLoad = true;
 let isAnimating = false;
 let pendingTimers = [];
-let lastData = null; // <-- memorizziamo l'ultimo JSON per il flap periodico
 
 const list      = document.getElementById("list");
 const clackBtn  = document.getElementById("clackBtn");
@@ -128,8 +127,7 @@ function rollDigits(tileEl, finalChar, durationMs, startDelay){
   }, startDelay);
 }
 
-// forceAnimation = true => ruota anche se il prezzo non è cambiato
-function render(data, forceAnimation = false){
+function render(data){
   try{
     if(!data||!Array.isArray(data.items)) throw new Error("JSON senza items[]");
   }catch(e){
@@ -187,7 +185,7 @@ function render(data, forceAnimation = false){
     card.appendChild(priceWrap);
     frag.appendChild(card);
 
-    const changed  = forceAnimation || firstLoad || priceStr !== (prevStr ?? "");
+    const changed  = firstLoad || priceStr !== (prevStr ?? "");
     const duration = changed ? CONFIG.ROLL_MS : 0;
 
     curr.forEach((ch,k)=>{
@@ -223,19 +221,53 @@ async function tick(){
   if (isAnimating) return;
   try{
     const data = await fetchData();
-    lastData = data;           // <-- salviamo l'ultimo risultato
-    render(data, false);       // animazione SOLO se cambia il prezzo
+    render(data);
   }catch(e){
     showError(String(e));
   }
 }
 
-// --- Flap periodico ogni 2 minuti ---
-// Richiama render() con forceAnimation=true
+// ----------------------------------------------------
+// Flap periodico ogni 2 minuti
+// Ruota le cifre a schermo con la stessa animazione
+// ----------------------------------------------------
 function periodicFlap(){
+  // se sta già animando un cambio vero o è il primo load, non facciamo nulla
   if (isAnimating || firstLoad) return;
-  if (!lastData) return;
-  render(lastData, true);
+  if (!list) return;
+
+  const cards = list.querySelectorAll(".card");
+  if (!cards.length) return;
+
+  let maxCols = 0;
+
+  // calcoliamo il numero massimo di "tile" per card
+  cards.forEach(card => {
+    const tiles = card.querySelectorAll(".tiles .tile");
+    if (tiles.length > maxCols) maxCols = tiles.length;
+  });
+
+  if (maxCols === 0) return;
+
+  isAnimating = true;
+
+  cards.forEach(card => {
+    const tiles = card.querySelectorAll(".tiles .tile");
+
+    tiles.forEach((tile, colIndex) => {
+      const current = tile.textContent || " ";
+      const finalChar = current === "" ? " " : current;
+      const duration = CONFIG.ROLL_MS;
+      const delay = colIndex * 40;
+
+      rollDigits(tile, finalChar, duration - delay, delay);
+    });
+  });
+
+  const maxDuration = CONFIG.ROLL_MS + maxCols * 40 + 50;
+  schedule(()=>{
+    isAnimating = false;
+  }, maxDuration);
 }
 
 document.addEventListener("DOMContentLoaded", ()=>{
@@ -253,7 +285,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   tick();
   setInterval(()=>tick(), CONFIG.REFRESH_MS);
 
-  // ogni 2 minuti, flap anche senza cambi di prezzo
+  // ogni 2 minuti: animazione flap anche senza cambi prezzo
   setInterval(()=>periodicFlap(), 120000);
 });
 
@@ -266,7 +298,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if (hint) hint.style.display="none";
   }, { once:true });
 });
-
 document.addEventListener("visibilitychange", ()=>{
   if (document.visibilityState === "visible") tryInitAudio(true);
 });
