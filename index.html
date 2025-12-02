@@ -7,19 +7,19 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <audio id="ambient" src="audio/ambient.mp3" preload="auto" loop></audio>
   <header class="topbar">
     <h1 class="title">LA BORSA DEL GIN DEL MOLO89</h1>
     <div class="actions">
       <button id="clackBtn" class="audio" aria-pressed="true" title="Suono flap">Audio CLACK ON</button>
-      <button id="ambBtn" class="audio" aria-pressed="true" title="Sottofondo bar">Ambient ON</button>
       <button id="refreshBtn" class="audio" title="Aggiorna">↻</button>
     </div>
   </header>
   <main class="wrap">
-    <section id="hint" class="hint">Su iPhone: tocca lo schermo una volta per abilitare i suoni.</section>
+    <section id="hint" class="hint">
+      Su iPhone: se non senti più il clack, tocca lo schermo per riattivare l'audio.
+    </section>
     <section id="list" class="list" aria-live="polite"></section>
   </main>
-  <script src="script.js"></script>
+  <script src="script.js?v=2"></script>
 </body>
 </html>
