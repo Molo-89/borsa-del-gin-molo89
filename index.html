@@ -91,6 +91,7 @@
       font-size: 10px;
       opacity: 0.6;
       margin-bottom: 8px;
+      display: none; /* di base nascosto, lo accendo solo su iOS */
     }
 
     #gin-board {
@@ -173,17 +174,18 @@
       opacity: 0.9;
     }
 
-    /* 👇 Animazione più lunga, con più “giri” */
+    /* Animazione più lunga e “rumorosa” */
     .flap-char.flap-animate {
-      animation: flap-spin 0.7s ease-out;
+      animation: flap-spin 1.2s ease-out;
     }
 
     @keyframes flap-spin {
       0%   { transform: rotateX(0deg); }
-      20%  { transform: rotateX(90deg); }
-      40%  { transform: rotateX(0deg); }
-      60%  { transform: rotateX(90deg); }
-      80%  { transform: rotateX(0deg); }
+      15%  { transform: rotateX(90deg); }
+      30%  { transform: rotateX(0deg); }
+      50%  { transform: rotateX(90deg); }
+      70%  { transform: rotateX(0deg); }
+      90%  { transform: rotateX(90deg); }
       100% { transform: rotateX(0deg); }
     }
 
@@ -242,9 +244,11 @@
   </div>
 
   <script>
-    // URL della Web App (quello che funziona già)
+    // URL della Web App
     const DEFAULT_DATA_URL =
       "https://script.google.com/macros/s/AKfycbx5NTGC8Wjco6Y0Nm3dHFgJ1AiEBEj9pPyS7pRcdx2aoCKluCE-hEGu6Zi4m6_hmiap5w/exec";
+
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     // ---- AUDIO (solo clack) ----
     let audioCtx = null;
@@ -288,13 +292,20 @@
     const audioBtn = document.getElementById("audio-toggle");
     const iosHint = document.getElementById("ios-hint");
 
+    // mostra il messaggio SOLO su iOS
+    if (isIOS) {
+      iosHint.style.display = "block";
+    } else {
+      iosHint.style.display = "none";
+    }
+
     audioBtn.addEventListener("click", () => {
       ensureAudioContext();
       audioEnabled = !audioEnabled;
       if (audioEnabled) {
         audioBtn.classList.add("on");
         audioBtn.textContent = "Audio CLACK ON";
-        iosHint.style.display = "none";   // 👈 sparisce il messaggio iOS
+        iosHint.style.display = "none";   // sparisce quando attivi il clack
         playClack(2);
       } else {
         audioBtn.classList.remove("on");
@@ -302,15 +313,16 @@
       }
     });
 
-    // primo tap ovunque: sblocca audio context e nasconde il messaggio
-    window.addEventListener(
-      "touchstart",
-      () => {
-        ensureAudioContext();
-        iosHint.style.display = "none";   // 👈 nasconde al primo tocco
-      },
-      { once: true }
-    );
+    // primo tap/click ovunque: sblocca audio e nasconde il messaggio
+    function firstInteraction() {
+      ensureAudioContext();
+      iosHint.style.display = "none";
+      window.removeEventListener("touchstart", firstInteraction);
+      window.removeEventListener("click", firstInteraction);
+    }
+
+    window.addEventListener("touchstart", firstInteraction, { once: true });
+    window.addEventListener("click", firstInteraction, { once: true });
 
     // ---- UTILITÀ FETCH / DATI ----
 
@@ -411,7 +423,7 @@
           ch.classList.add("flap-animate");
         }
       });
-      if (audioEnabled) playClack(2);
+      if (audioEnabled) playClack(3); // un filo più presente
     }
 
     function render(data) {
