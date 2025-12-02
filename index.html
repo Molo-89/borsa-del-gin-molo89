@@ -2,71 +2,175 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Borsa del Gin – Molo 89</title>
+  <title>La Borsa del Gin del Molo89</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       height: 100%;
-      background: #05070b;
+      background: #050505;
       color: #f5f5f5;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
         "Helvetica Neue", Arial, sans-serif;
     }
-    body { display: flex; flex-direction: column; padding: 12px; }
-
-    .header { padding: 4px 2px 10px 2px; }
-    .header-title {
-      font-size: 18px; font-weight: 600;
-      letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9;
+    body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
     }
-    .header-sub { font-size: 11px; opacity: 0.5; margin-top: 2px; }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .title-block {
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+      line-height: 1.2;
+      font-size: 18px;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      opacity: 0.6;
+      margin-top: 4px;
+      text-transform: none;
+      letter-spacing: 0.04em;
+    }
+
+    .audio-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .audio-btn {
+      border-radius: 999px;
+      border: 1px solid #64748b;
+      background: #020617;
+      padding: 5px 10px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #e5e7eb;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .audio-btn.on {
+      border-color: #22c55e;
+      color: #bbf7d0;
+    }
+
+    .refresh-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid #64748b;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.7;
+    }
+
+    .ios-audio-hint {
+      font-size: 10px;
+      opacity: 0.6;
+      margin-bottom: 8px;
+    }
 
     #gin-board {
-      flex: 1; display: flex; flex-direction: column;
-      gap: 8px; margin-top: 4px; padding-bottom: 8px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+      padding-bottom: 8px;
     }
 
     .gin-card {
-      background: #0b0f18;
-      border-radius: 8px;
-      padding: 8px 10px 6px 10px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      grid-template-rows: auto auto;
-      gap: 4px 8px;
-      border: 1px solid #202636;
+      background: #050509;
+      border-radius: 16px;
+      padding: 10px 12px 8px 12px;
+      border: 1px solid #1f2933;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
     }
 
     .gin-name {
-      font-size: 14px; font-weight: 500;
-      text-transform: uppercase; opacity: 0.96;
+      font-size: 15px;
+      font-weight: 600;
     }
-    .gin-delta { font-size: 10px; text-align: right; opacity: 0.7; }
+
+    .gin-delta {
+      font-size: 11px;
+      font-weight: 500;
+    }
     .gin-delta.up { color: #4ade80; }
-    .gin-delta.down { color: #f97373; }
+    .gin-delta.down { color: #fb7185; }
+    .gin-delta.zero { color: #e5e7eb; }
 
     .price-row {
-      grid-column: 1 / span 2;
-      display: flex; align-items: center; gap: 4px; margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
     }
 
-    .price-label { font-size: 10px; opacity: 0.6; }
+    .price-label {
+      font-size: 11px;
+      opacity: 0.65;
+    }
 
-    .price-flap-wrapper { display: inline-flex; gap: 2px; }
+    .price-flap-wrapper {
+      display: inline-flex;
+      gap: 3px;
+    }
 
     .flap-char {
-      position: relative; width: 14px; height: 18px;
-      border-radius: 2px; border: 1px solid #f5f5f5;
+      position: relative;
+      width: 18px;
+      height: 22px;
+      border-radius: 3px;
+      border: 1px solid #f5f5f5;
       background: #05070b;
-      display: flex; align-items: center; justify-content: center;
-      font-family: "SF Mono", monospace; font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      font-size: 13px;
+      font-weight: 600;
     }
 
     .flap-char::before {
-      content: ""; position: absolute; left: 0; right: 0; top: 50%;
-      height: 1px; background: #f5f5f5; opacity: 0.9;
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+      background: #f5f5f5;
+      opacity: 0.9;
     }
 
     .flap-char.flap-animate { animation: flap-spin 0.35s ease-out; }
@@ -77,39 +181,130 @@
     }
 
     .footer-line {
-      font-size: 9px; opacity: 0.35;
-      text-align: right; margin-top: 4px;
+      font-size: 9px;
+      opacity: 0.4;
+      text-align: right;
+      margin-top: 6px;
     }
 
     .status-badge {
-      position: fixed; right: 8px; bottom: 8px;
-      font-size: 9px; padding: 2px 6px;
-      border-radius: 999px; background: rgba(15,23,42,0.9);
+      position: fixed;
+      right: 8px;
+      bottom: 8px;
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.9);
       border: 1px solid rgba(148,163,184,0.6);
-      color: #e5e7eb; opacity: 0.65; display:none;
+      color: #e5e7eb;
+      opacity: 0.7;
+      display: inline-block;
     }
     .status-badge.offline { border-color: rgba(248,113,113,0.65); }
+
+    @media (max-width: 380px) {
+      body { padding: 10px; }
+      .title-block { font-size: 16px; }
+      .gin-card { padding: 9px 10px 7px 10px; }
+    }
   </style>
 </head>
 
 <body>
-  <header class="header">
-    <div class="header-title">Borsa del Gin</div>
-    <div class="header-sub">Molo 89 – Ferrara</div>
-  </header>
+  <div class="app">
+    <header>
+      <div>
+        <div class="title-block">La Borsa del Gin del Molo89</div>
+        <div class="subtitle">Molo 89 – Ferrara</div>
+      </div>
+      <div class="audio-wrapper">
+        <button id="audio-toggle" class="audio-btn">Audio CLACK OFF</button>
+        <div class="refresh-icon">↻</div>
+      </div>
+    </header>
 
-  <main id="gin-board"></main>
+    <div id="ios-hint" class="ios-audio-hint">
+      Audio sospeso da iOS — tocca lo schermo per riattivare il clack.
+    </div>
 
-  <div class="footer-line" id="last-update-label"></div>
+    <main id="gin-board"></main>
 
-  <div id="status-badge" class="status-badge"></div>
+    <div class="footer-line" id="last-update-label"></div>
+
+    <div id="status-badge" class="status-badge">Online</div>
+  </div>
 
   <script>
-    // URL di default della tua Web App Google Apps Script
+    // URL della Web App (quello che funziona già)
     const DEFAULT_DATA_URL =
       "https://script.google.com/macros/s/AKfycbx5NTGC8Wjco6Y0Nm3dHFgJ1AiEBEj9pPyS7pRcdx2aoCKluCE-hEGu6Zi4m6_hmiap5w/exec";
 
-    // --- UTILITÀ ---
+    // ---- AUDIO (solo clack) ----
+    let audioCtx = null;
+    let audioEnabled = false;
+
+    function ensureAudioContext() {
+      if (!("AudioContext" in window || "webkitAudioContext" in window)) return;
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+    }
+
+    function playClack(count = 1) {
+      if (!audioEnabled || !audioCtx) return;
+
+      for (let i = 0; i < count; i++) {
+        const delay = i * 0.06;
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          const now = audioCtx.currentTime;
+
+          osc.frequency.value = 2100 + Math.random() * 300;
+          gain.gain.setValueAtTime(0.0, now);
+          gain.gain.linearRampToValueAtTime(0.3, now + 0.005);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.06);
+        }, delay * 1000);
+      }
+    }
+
+    const audioBtn = document.getElementById("audio-toggle");
+    const iosHint = document.getElementById("ios-hint");
+
+    audioBtn.addEventListener("click", () => {
+      ensureAudioContext();
+      audioEnabled = !audioEnabled;
+      if (audioEnabled) {
+        audioBtn.classList.add("on");
+        audioBtn.textContent = "Audio CLACK ON";
+        iosHint.style.opacity = 0.3;
+        playClack(2);
+      } else {
+        audioBtn.classList.remove("on");
+        audioBtn.textContent = "Audio CLACK OFF";
+      }
+    });
+
+    // primo tap ovunque abilita l'audio context (poi decidi col bottone se tenerlo ON)
+    window.addEventListener(
+      "touchstart",
+      () => {
+        ensureAudioContext();
+      },
+      { once: true }
+    );
+
+    // ---- UTILITÀ FETCH / DATI ----
 
     function getQueryParams() {
       const p = {};
@@ -164,17 +359,15 @@
       throw lastErr;
     }
 
+    const statusBadge = document.getElementById("status-badge");
+
     function setBadge({ text, offline = false }) {
-      const el = document.getElementById("status-badge");
-      el.textContent = text;
-      el.classList.toggle("offline", offline);
-      el.style.display = "inline-block";
+      statusBadge.textContent = text;
+      statusBadge.classList.toggle("offline", offline);
     }
 
-    // --- NORMALIZZA I DATI DAL TUO JSON ---
-
+    // normalizza il JSON: gestisce sia array puro che {items:[]}
     function normalizeData(json) {
-      // Caso 1: già un array [ {name, price, delta} ]
       if (Array.isArray(json)) {
         return json.map(item => ({
           name: String(item.name || "").trim(),
@@ -183,7 +376,6 @@
         }));
       }
 
-      // Caso 2: oggetto { updated: "...", items: [ ... ] }  <-- il tuo caso
       if (json && Array.isArray(json.items)) {
         return json.items.map(item => ({
           name: String(item.name || "").trim(),
@@ -192,11 +384,10 @@
         }));
       }
 
-      // Altro: nessun dato utile
       return [];
     }
 
-    // --- RENDER ---
+    // ---- RENDER ----
 
     function flap() {
       document.querySelectorAll(".price-flap-wrapper").forEach(w => {
@@ -210,6 +401,7 @@
           ch.classList.add("flap-animate");
         }
       });
+      if (audioEnabled) playClack(2);
     }
 
     function render(data) {
@@ -228,6 +420,9 @@
           const card = document.createElement("div");
           card.className = "gin-card";
 
+          const header = document.createElement("div");
+          header.className = "card-header";
+
           const name = document.createElement("div");
           name.className = "gin-name";
           name.textContent = item.name || "Gin";
@@ -242,8 +437,12 @@
             delta.classList.add("down");
             delta.textContent = "▼ " + d.toFixed(1) + "%";
           } else {
-            delta.textContent = "– 0.0%";
+            delta.classList.add("zero");
+            delta.textContent = "±0.0%";
           }
+
+          header.appendChild(name);
+          header.appendChild(delta);
 
           const priceRow = document.createElement("div");
           priceRow.className = "price-row";
@@ -265,8 +464,7 @@
           priceRow.appendChild(label);
           priceRow.appendChild(wrap);
 
-          card.appendChild(name);
-          card.appendChild(delta);
+          card.appendChild(header);
           card.appendChild(priceRow);
 
           board.appendChild(card);
@@ -281,7 +479,7 @@
         });
     }
 
-    // --- LOGICA PRINCIPALE ---
+    // ---- LOGICA PRINCIPALE ----
 
     async function loadBoard() {
       const url = getDataUrl();
@@ -301,7 +499,7 @@
     document.addEventListener("DOMContentLoaded", () => {
       loadBoard();                    // subito
       setInterval(loadBoard, 60000);  // ogni 60s ricarica dati
-      setInterval(flap, 120000);      // ogni 120s anima i flap
+      setInterval(flap, 120000);      // ogni 120s flap + clack
     });
   </script>
 </body>
