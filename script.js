@@ -17,9 +17,9 @@ let pendingTimers = [];
 
 const list      = document.getElementById("list");
 const clackBtn  = document.getElementById("clackBtn");
-const ambBtn    = document.getElementById("ambBtn");     // ora inutilizzato (pulsante ambient)
+const ambBtn    = document.getElementById("ambBtn");     // pulsante ambient (non usato più)
 const hint      = document.getElementById("hint");
-const ambientEl = document.getElementById("ambient");    // ora inutilizzato (audio di sottofondo)
+const ambientEl = document.getElementById("ambient");    // audio ambient (non usato più)
 
 function showError(msg){
   let el = document.getElementById("err");
@@ -293,30 +293,49 @@ function periodicFlap(){
   }, maxDuration);
 }
 
+// ----------------------------
+// Inizializzazione pagina
+// ----------------------------
 document.addEventListener("DOMContentLoaded", ()=>{
-  // Nessun audio ambient: se esistono, li spegniamo e nascondiamo
-  if (ambientEl){
-    try{
-      ambientEl.pause();
-      ambientEl.src = "";
-    }catch(e){}
-  }
-  if (ambBtn){
-    ambBtn.style.display = "none";
-  }
+  // 1) Spegniamo ed eliminiamo qualsiasi audio di sottofondo
+  try{
+    document.querySelectorAll("audio").forEach(a => {
+      try { a.pause(); } catch(e){}
+      try { a.currentTime = 0; } catch(e){}
+      a.removeAttribute("src");
+      try { a.load(); } catch(e){}
+      // opzionale: rimuoviamo proprio il nodo dal DOM
+      if (a.parentElement) {
+        a.parentElement.removeChild(a);
+      }
+    });
+  }catch(e){}
 
+  // 2) Nascondiamo qualsiasi pulsante che contenga "Ambient"
+  try{
+    document.querySelectorAll("button, .btn, .toggle").forEach(el => {
+      if (el.textContent && /ambient/i.test(el.textContent)) {
+        el.style.display = "none";
+      }
+    });
+  }catch(e){}
+
+  // 3) Inizializziamo solo il clack
   tryInitAudio();
   updateButtons();
+  updateAudioHint();
 
+  // 4) Teniamo vivo l'audio context e aggiorniamo l'hint periodicamente
   setInterval(()=>{
     tryInitAudio(true);
     updateAudioHint();
   }, 25000);
 
+  // 5) Aggiornamento prezzi da Google Sheet
   tick();
   setInterval(()=>tick(), CONFIG.REFRESH_MS);
 
-  // ogni 2 minuti: animazione flap anche senza cambi prezzo
+  // 6) Ogni 2 minuti: animazione flap anche senza cambi prezzo
   setInterval(()=>periodicFlap(), 120000);
 });
 
