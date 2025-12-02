@@ -74,18 +74,6 @@
       color: #bbf7d0;
     }
 
-    .refresh-icon {
-      width: 18px;
-      height: 18px;
-      border-radius: 999px;
-      border: 1px solid #64748b;
-      font-size: 11px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0.7;
-    }
-
     .ios-audio-hint {
       font-size: 10px;
       opacity: 0.7;
@@ -148,15 +136,15 @@
 
     .flap-char {
       position: relative;
-      width: 19px;
-      height: 23px;
+      width: 20px;
+      height: 24px;
       border-radius: 3px;
       border: 1px solid #f5f5f5;
       background: #05070b;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      font-family: "SF Mono", monospace;
       font-size: 14px;
       font-weight: 600;
     }
@@ -168,22 +156,27 @@
       right: 0;
       top: 50%;
       height: 1px;
-      background: #f5f5f5;
-      opacity: 0.9;
+      background: #ffffff;
+      opacity: 0.8;
     }
 
-    /* Flap più “tabellone”: 3 giri completi */
+    /* === FLAP REALISTICO === */
     .flap-char.flap-animate {
-      animation: flap-spin 1.1s ease-out;
+      animation: flap-real 2.2s steps(12) forwards;
     }
-    @keyframes flap-spin {
+
+    @keyframes flap-real {
       0%   { transform: rotateX(0deg); }
+      10%  { transform: rotateX(90deg); }
       20%  { transform: rotateX(180deg); }
-      35%  { transform: rotateX(0deg); }
-      55%  { transform: rotateX(180deg); }
-      75%  { transform: rotateX(0deg); }
-      90%  { transform: rotateX(180deg); }
-      100% { transform: rotateX(0deg); }
+      30%  { transform: rotateX(270deg); }
+      40%  { transform: rotateX(360deg); }
+      50%  { transform: rotateX(450deg); }
+      60%  { transform: rotateX(540deg); }
+      70%  { transform: rotateX(630deg); }
+      80%  { transform: rotateX(720deg); }
+      90%  { transform: rotateX(810deg); }
+      100% { transform: rotateX(900deg); }
     }
 
     .footer-line {
@@ -207,12 +200,6 @@
       display: inline-block;
     }
     .status-badge.offline { border-color: rgba(248,113,113,0.65); }
-
-    @media (max-width: 380px) {
-      body { padding: 10px; }
-      .title-block { font-size: 16px; }
-      .gin-card { padding: 9px 10px 7px 10px; }
-    }
   </style>
 </head>
 
@@ -230,7 +217,7 @@
     </header>
 
     <div id="ios-hint" class="ios-audio-hint">
-      Tocca il pulsante in alto a destra per attivare il suono del flapping.
+      Tocca il pulsante per attivare il suono del flapping.
     </div>
 
     <main id="gin-board"></main>
@@ -244,7 +231,7 @@
     const DEFAULT_DATA_URL =
       "https://script.google.com/macros/s/AKfycbx5NTGC8Wjco6Y0Nm3dHFgJ1AiEBEj9pPyS7pRcdx2aoCKluCE-hEGu6Zi4m6_hmiap5w/exec";
 
-    // --- AUDIO (clack secco, niente "bip" alto) ---
+    // --- AUDIO ---
     let audioCtx = null;
     let audioEnabled = false;
 
@@ -254,34 +241,30 @@
         const AC = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AC();
       }
-      if (audioCtx.state === "suspended") {
-        audioCtx.resume();
-      }
+      if (audioCtx.state === "suspended") audioCtx.resume();
     }
 
-    // suono tipo "clack" con doppio colpo e frequenza più bassa
-    function playClack(count = 1) {
+    // === CLACK REALISTICO ===
+    function playClack() {
       if (!audioEnabled || !audioCtx) return;
 
-      for (let i = 0; i < count; i++) {
-        const delay = i * 0.08;
-        setTimeout(() => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          const now = audioCtx.currentTime;
+      for (let i = 0; i < 6; i++) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const now = audioCtx.currentTime + i * 0.05;
 
-          osc.type = "square";
-          osc.frequency.value = 900 + Math.random() * 200; // più basso, meno bip
-          gain.gain.setValueAtTime(0.0, now);
-          gain.gain.linearRampToValueAtTime(0.4, now + 0.01);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.type = "square";
+        osc.frequency.value = 300 + Math.random() * 80;
 
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
+        gain.gain.setValueAtTime(0.0, now);
+        gain.gain.linearRampToValueAtTime(0.35, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
-          osc.start(now);
-          osc.stop(now + 0.09);
-        }, delay * 1000);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.08);
       }
     }
 
@@ -294,15 +277,14 @@
       if (audioEnabled) {
         audioBtn.classList.add("on");
         audioBtn.textContent = "Audio CLACK ON";
-        iosHint.textContent = ""; // tolgo la frase quando l'audio è attivo
-        playClack(2);
+        iosHint.textContent = "";
+        playClack();
       } else {
         audioBtn.classList.remove("on");
         audioBtn.textContent = "Audio CLACK OFF";
       }
     });
 
-    // Primo tap/click ovunque: solo per togliere la frase se ti dà fastidio
     function firstInteraction() {
       iosHint.textContent = "";
       window.removeEventListener("touchstart", firstInteraction);
@@ -312,14 +294,12 @@
     window.addEventListener("click", firstInteraction, { once: true });
 
     // --- FETCH DATI ---
-
     function getQueryParams() {
       const p = {};
       const q = window.location.search.substring(1);
       if (!q) return p;
       q.split("&").forEach(part => {
         const [k, v] = part.split("=");
-        if (!k) return;
         p[decodeURIComponent(k)] = decodeURIComponent(v || "");
       });
       return p;
@@ -374,123 +354,92 @@
     }
 
     function normalizeData(json) {
-      if (Array.isArray(json)) {
-        return json.map(item => ({
-          name: String(item.name || "").trim(),
-          price: Number(item.price) || 0,
-          delta: Number(item.delta ?? item.change ?? 0) || 0
-        }));
-      }
-      if (json && Array.isArray(json.items)) {
-        return json.items.map(item => ({
-          name: String(item.name || "").trim(),
-          price: Number(item.price) || 0,
-          delta: Number(item.delta ?? item.change ?? 0) || 0
-        }));
-      }
+      if (Array.isArray(json)) return json;
+      if (json && Array.isArray(json.items)) return json.items;
       return [];
     }
 
-    // --- RENDER & FLAP ---
-
+    // --- FLAP ---
     function flap() {
       document.querySelectorAll(".price-flap-wrapper").forEach(w => {
-        const cs = w.querySelectorAll(".flap-char");
-        if (!cs.length) return;
-
-        const count = Math.min(cs.length, 4);
-        for (let i = 0; i < count; i++) {
-          const ch = cs[Math.floor(Math.random() * cs.length)];
+        w.querySelectorAll(".flap-char").forEach(ch => {
           ch.classList.remove("flap-animate");
           void ch.offsetWidth;
           ch.classList.add("flap-animate");
-        }
+        });
       });
-      if (audioEnabled) playClack(3);
+
+      if (audioEnabled) playClack();
     }
 
+    // --- RENDER ---
     function render(data) {
       const board = document.getElementById("gin-board");
       board.innerHTML = "";
 
-      if (!data || !data.length) {
-        const empty = document.createElement("div");
-        empty.style.fontSize = "11px";
-        empty.style.opacity = "0.5";
-        empty.style.marginTop = "8px";
-        empty.textContent = "Nessun dato disponibile.";
-        board.appendChild(empty);
-      } else {
-        data.forEach((item) => {
-          const card = document.createElement("div");
-          card.className = "gin-card";
+      data.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "gin-card";
 
-          const header = document.createElement("div");
-          header.className = "card-header";
+        const header = document.createElement("div");
+        header.className = "card-header";
 
-          const name = document.createElement("div");
-          name.className = "gin-name";
-          name.textContent = item.name || "Gin";
+        const name = document.createElement("div");
+        name.className = "gin-name";
+        name.textContent = item.name || "Gin";
 
-          const delta = document.createElement("div");
-          delta.className = "gin-delta";
-          const d = Number(item.delta);
-          if (d > 0) {
-            delta.classList.add("up");
-            delta.textContent = "▲ +" + d.toFixed(1) + "%";
-          } else if (d < 0) {
-            delta.classList.add("down");
-            delta.textContent = "▼ " + d.toFixed(1) + "%";
-          } else {
-            delta.classList.add("zero");
-            delta.textContent = "±0.0%";
-          }
+        const delta = document.createElement("div");
+        delta.className = "gin-delta";
 
-          header.appendChild(name);
-          header.appendChild(delta);
+        const d = Number(item.delta);
+        if (d > 0) { delta.classList.add("up"); delta.textContent = `▲ +${d.toFixed(1)}%`; }
+        else if (d < 0) { delta.classList.add("down"); delta.textContent = `▼ ${d.toFixed(1)}%`; }
+        else { delta.classList.add("zero"); delta.textContent = "±0.0%"; }
 
-          const priceRow = document.createElement("div");
-          priceRow.className = "price-row";
+        header.appendChild(name);
+        header.appendChild(delta);
+        card.appendChild(header);
 
-          const label = document.createElement("div");
-          label.className = "price-label";
-          label.textContent = "Prezzo ora";
+        const priceRow = document.createElement("div");
+        priceRow.className = "price-row";
 
-          const wrap = document.createElement("div");
-          wrap.className = "price-flap-wrapper";
+        const label = document.createElement("div");
+        label.className = "price-label";
+        label.textContent = "Prezzo ora";
 
-          (Number(item.price).toFixed(2) + "").split("").forEach(c => {
-            const ch = document.createElement("span");
-            ch.className = "flap-char";
-            ch.textContent = c;
-            wrap.appendChild(ch);
-          });
+        const wrap = document.createElement("div");
+        wrap.className = "price-flap-wrapper";
 
-          priceRow.appendChild(label);
-          priceRow.appendChild(wrap);
-
-          card.appendChild(header);
-          card.appendChild(priceRow);
-
-          board.appendChild(card);
+        (Number(item.price).toFixed(2) + "").split("").forEach(c => {
+          const ch = document.createElement("span");
+          ch.className = "flap-char";
+          ch.textContent = c;
+          wrap.appendChild(ch);
         });
-      }
+
+        priceRow.appendChild(label);
+        priceRow.appendChild(wrap);
+
+        card.appendChild(priceRow);
+        board.appendChild(card);
+      });
 
       document.getElementById("last-update-label").textContent =
         "Ultimo aggiornamento: " +
-        new Date().toLocaleTimeString("it-IT", {
-          hour: "2-digit",
-          minute: "2-digit"
-        });
+        new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
     }
 
+    // --- LOADBOARD COMPLETO ---
     async function loadBoard() {
       const url = getDataUrl();
 
       try {
         const json = await fetchDataRetry(url);
         const data = normalizeData(json);
+
         render(data);
+        flap(); // FLAP SUBITO
+
         setBadge({ text: "Online", offline: false });
       } catch (e) {
         console.error("Errore caricamento dati:", e);
