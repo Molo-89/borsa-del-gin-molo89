@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="it">
-
 <head>
   <meta charset="UTF-8" />
   <title>Borsa del Gin – Molo 89</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       height: 100%;
       background: #05070b;
@@ -40,7 +39,10 @@
       border: 1px solid #202636;
     }
 
-    .gin-name { font-size: 14px; font-weight: 500; text-transform: uppercase; opacity: 0.96; }
+    .gin-name {
+      font-size: 14px; font-weight: 500;
+      text-transform: uppercase; opacity: 0.96;
+    }
     .gin-delta { font-size: 10px; text-align: right; opacity: 0.7; }
     .gin-delta.up { color: #4ade80; }
     .gin-delta.down { color: #f97373; }
@@ -75,27 +77,31 @@
       100% { transform: rotateX(0deg); }
     }
 
-    .footer-line { font-size: 9px; opacity: 0.35; text-align: right; margin-top: 4px; }
+    .footer-line {
+      font-size: 9px; opacity: 0.35;
+      text-align: right; margin-top: 4px;
+    }
 
-    #status-badge {
+    .status-badge {
       position: fixed; right: 8px; bottom: 8px;
       font-size: 9px; padding: 2px 6px;
       border-radius: 999px; background: rgba(15,23,42,0.9);
       border: 1px solid rgba(148,163,184,0.6);
       color: #e5e7eb; opacity: 0.65;
     }
+    .status-badge.offline { border-color: rgba(248,113,113,0.65); }
 
-    /* Toggle audio */
     #audio-toggle {
       position: fixed;
-      right: 8px; bottom: 48px;
+      right: 8px;
+      bottom: 40px;
       padding: 6px 10px;
       background: #0b0f18;
       border: 1px solid #444c5c;
       border-radius: 6px;
       font-size: 11px;
       color: #f5f5f5;
-      opacity: 0.8;
+      opacity: 0.85;
     }
   </style>
 </head>
@@ -109,119 +115,194 @@
   <main id="gin-board"></main>
 
   <div class="footer-line" id="last-update-label"></div>
-  <div id="status-badge">Online</div>
+
+  <div id="status-badge" class="status-badge">Online</div>
   <button id="audio-toggle">Audio clack ON</button>
 
   <script>
-    const DATA_URL =
+    // URL della tua Web App
+    const BASE_DATA_URL =
       "https://script.google.com/macros/s/AKfycbx5NTGC8Wjco6Y0Nm3dHFgJ1AiEBEj9pPyS7pRcdx2aoCKluCE-hEGu6Zi4m6_hmiap5w/exec";
 
-    /* ---------------- AUDIO SETUP ---------------- */
+    /* -------------------- AUDIO CLACK -------------------- */
+
+    let audioCtx = null;
     let audioEnabled = true;
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioPrimed = false;
 
-    // suono clap
-    function playClack() {
-      if (!audioEnabled) return;
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.frequency.value = 800;
-      g.gain.setValueAtTime(0.2, audioCtx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-      o.connect(g); g.connect(audioCtx.destination);
-      o.start(); o.stop(audioCtx.currentTime + 0.06);
-    }
-
-    // ripristino audio su iPhone quando ritorni in pagina
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden && audioEnabled) {
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === "suspended") {
         audioCtx.resume();
       }
-    });
-
-    document.getElementById("audio-toggle").addEventListener("click", () => {
-      audioEnabled = !audioEnabled;
-      audioCtx.resume();
-      document.getElementById("audio-toggle").textContent =
-        audioEnabled ? "Audio clack ON" : "Audio clack OFF";
-    });
-
-    /* -------------- FETCH DATI -------------- */
-    async function loadBoard() {
-      try {
-        const res = await fetch(DATA_URL, { cache: "no-store" });
-        const data = await res.json();
-        render(data);
-        document.getElementById("status-badge").textContent = "Online";
-      } catch (e) {
-        document.getElementById("status-badge").textContent = "Offline";
-      }
     }
 
-    function flap() {
-      document.querySelectorAll(".price-flap-wrapper").forEach(w => {
-        const chars = w.querySelectorAll(".flap-char");
-        if (!chars.length) return;
-        const n = Math.max(1, Math.min(3, Math.floor(Math.random() * chars.length)));
-        for (let i = 0; i < n; i++) {
-          const ch = chars[Math.floor(Math.random() * chars.length)];
-          ch.classList.remove("flap-animate");
-          void ch.offsetWidth;
-          ch.classList.add("flap-animate");
-          playClack();
-        }
+    function playClack() {
+      if (!audioEnabled) return;
+      ensureAudioContext();
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.frequency.value = 900;               // timbro secco
+      const now = audioCtx.currentTime;
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.07);
+    }
+
+    // Primo tap dell’utente: sblocca l’audio su iOS
+    document.addEventListener("touchstart", () => {
+      if (!audioPrimed) {
+        ensureAudioContext();
+        audioPrimed = true;
+      }
+    }, { passive: true, once: true });
+
+    // Quando torni nella pagina (iOS): riprendi l’audio se era ON
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && audioEnabled) {
+        ensureAudioContext();
+      }
+    });
+
+    const audioToggleBtn = document.getElementById("audio-toggle");
+    audioToggleBtn.addEventListener("click", () => {
+      audioEnabled = !audioEnabled;
+      if (audioEnabled) {
+        ensureAudioContext();
+        audioToggleBtn.textContent = "Audio clack ON";
+      } else {
+        audioToggleBtn.textContent = "Audio clack OFF";
+      }
+    });
+
+    /* -------------------- FETCH & RENDER -------------------- */
+
+    function getQueryParams() {
+      const p = {};
+      const q = window.location.search.substring(1);
+      if (!q) return p;
+      q.split("&").forEach(part => {
+        const [k, v] = part.split("=");
+        if (!k) return;
+        p[decodeURIComponent(k)] = decodeURIComponent(v || "");
       });
+      return p;
+    }
+
+    function getDataUrl() {
+      const params = getQueryParams();
+      if (params.src) return params.src;
+      return BASE_DATA_URL;
+    }
+
+    // Normalizza qualunque JSON arrivi:
+    //  - [ {name, price, delta}, ... ]
+    //  - { updated:..., items:[ {name, price, change}, ... ] }
+    function normalizeData(json) {
+      if (Array.isArray(json)) return json;
+      if (json && Array.isArray(json.items)) {
+        return json.items.map(it => ({
+          name: it.name,
+          price: it.price,
+          delta: it.delta ?? it.change ?? 0
+        }));
+      }
+      return [];
+    }
+
+    function setBadge(online) {
+      const el = document.getElementById("status-badge");
+      if (!el) return;
+      el.textContent = online ? "Online" : "Offline";
+      el.classList.toggle("offline", !online);
+    }
+
+    async function fetchData() {
+      const url = getDataUrl();
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const json = await res.json();
+        setBadge(true);
+        return normalizeData(json);
+      } catch (e) {
+        console.error("Errore fetch dati:", e);
+        setBadge(false);
+        return [];
+      }
     }
 
     function render(data) {
       const board = document.getElementById("gin-board");
       board.innerHTML = "";
 
-      data.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "gin-card";
+      if (!data || !data.length) {
+        const empty = document.createElement("div");
+        empty.style.fontSize = "11px";
+        empty.style.opacity = "0.5";
+        empty.style.marginTop = "8px";
+        empty.textContent = "Nessun dato disponibile.";
+        board.appendChild(empty);
+      } else {
+        data.forEach(item => {
+          const card = document.createElement("div");
+          card.className = "gin-card";
 
-        const name = document.createElement("div");
-        name.className = "gin-name";
-        name.textContent = item.name;
+          const name = document.createElement("div");
+          name.className = "gin-name";
+          name.textContent = item.name;
 
-        const delta = document.createElement("div");
-        delta.className = "gin-delta";
-        const d = Number(item.delta);
-        if (d > 0) {
-          delta.classList.add("up");
-          delta.textContent = "▲ +" + d.toFixed(1) + "%";
-        } else if (d < 0) {
-          delta.classList.add("down");
-          delta.textContent = "▼ " + d.toFixed(1) + "%";
-        } else {
-          delta.textContent = "– 0.0%";
-        }
+          const delta = document.createElement("div");
+          delta.className = "gin-delta";
+          const d = Number(item.delta ?? item.change ?? 0);
+          if (d > 0) {
+            delta.classList.add("up");
+            delta.textContent = "▲ +" + d.toFixed(1) + "%";
+          } else if (d < 0) {
+            delta.classList.add("down");
+            delta.textContent = "▼ " + d.toFixed(1) + "%";
+          } else {
+            delta.textContent = "– 0.0%";
+          }
 
-        const priceRow = document.createElement("div");
-        priceRow.className = "price-row";
+          const priceRow = document.createElement("div");
+          priceRow.className = "price-row";
 
-        const label = document.createElement("div");
-        label.className = "price-label";
-        label.textContent = "Prezzo ora";
+          const label = document.createElement("div");
+          label.className = "price-label";
+          label.textContent = "Prezzo ora";
 
-        const wrap = document.createElement("div");
-        wrap.className = "price-flap-wrapper";
+          const wrap = document.createElement("div");
+          wrap.className = "price-flap-wrapper";
 
-        (Number(item.price).toFixed(2) + "").split("").forEach(c => {
-          const ch = document.createElement("span");
-          ch.className = "flap-char";
-          ch.textContent = c;
-          wrap.appendChild(ch);
+          (Number(item.price).toFixed(2) + "").split("").forEach(c => {
+            const ch = document.createElement("span");
+            ch.className = "flap-char";
+            ch.textContent = c;
+            wrap.appendChild(ch);
+          });
+
+          priceRow.appendChild(label);
+          priceRow.appendChild(wrap);
+
+          card.appendChild(name);
+          card.appendChild(delta);
+          card.appendChild(priceRow);
+
+          board.appendChild(card);
         });
-
-        priceRow.appendChild(label);
-        priceRow.appendChild(wrap);
-        card.appendChild(name);
-        card.appendChild(delta);
-        card.appendChild(priceRow);
-        board.appendChild(card);
-      });
+      }
 
       document.getElementById("last-update-label").textContent =
         "Ultimo aggiornamento: " +
@@ -231,13 +312,31 @@
         });
     }
 
+    function flap() {
+      document.querySelectorAll(".price-flap-wrapper").forEach(w => {
+        const cs = w.querySelectorAll(".flap-char");
+        if (!cs.length) return;
+        const count = Math.max(1, Math.min(3, Math.round(Math.random() * cs.length)));
+        for (let i = 0; i < count; i++) {
+          const ch = cs[Math.floor(Math.random() * cs.length)];
+          ch.classList.remove("flap-animate");
+          void ch.offsetWidth;
+          ch.classList.add("flap-animate");
+          playClack();
+        }
+      });
+    }
+
+    async function loadBoard() {
+      const data = await fetchData();
+      render(data);
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
-      loadBoard();
-      setInterval(loadBoard, 60000);
-      setInterval(flap, 120000);
+      loadBoard();                 // subito
+      setInterval(loadBoard, 60000);  // ogni 60s ricarica dati
+      setInterval(flap, 120000);      // ogni 120s flap + clack
     });
   </script>
-
 </body>
-
 </html>
