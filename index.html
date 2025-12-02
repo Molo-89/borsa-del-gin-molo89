@@ -162,9 +162,11 @@
       opacity: 0.8;
     }
 
-    /* === FLAP REALISTICO: ~2.8s, 3 giri completi, finale dritto === */
+    /* FLAP: 3 giri completi; durata e delay vengono variati via JS per ogni casella */
     .flap-char.flap-animate {
-      animation: flap-real 2.8s linear forwards;
+      animation-name: flap-real;
+      animation-timing-function: linear;
+      animation-fill-mode: forwards;
     }
 
     @keyframes flap-real {
@@ -247,7 +249,7 @@
 
     function playNoiseClick(startAt) {
       const ctx = audioCtx;
-      const duration = 0.04; // 40ms
+      const duration = 0.04;
       const sampleRate = ctx.sampleRate;
       const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
       const data = buffer.getChannelData(0);
@@ -282,7 +284,7 @@
 
       const ctx = audioCtx;
       const base = ctx.currentTime;
-      const interval = 0.11; // ogni 110ms circa
+      const interval = 0.11;
       const hits = Math.floor(durationMs / 1000 / interval);
 
       for (let i = 0; i < hits; i++) {
@@ -300,7 +302,7 @@
         audioBtn.classList.add("on");
         audioBtn.textContent = "Audio CLACK ON";
         iosHint.textContent = "";
-        playClackSequence(600); // piccolo assaggio
+        playClackSequence(600);
       } else {
         audioBtn.classList.remove("on");
         audioBtn.textContent = "Audio CLACK OFF";
@@ -394,7 +396,7 @@
       return [];
     }
 
-    // --- FLAP: numeri che girano per 2.8s, poi si fermano sul prezzo ---
+    // --- FLAP: numeri che girano per ~2.8s, ogni casella con delay/durata diversi ---
     const FLAP_DURATION_MS = 2800;
     const FLAP_TICK_MS = 40;
 
@@ -415,8 +417,12 @@
         const finalChars = finalText.split("");
         const digits = "0123456789";
 
-        // trigger animazione CSS
+        // ogni casella ha il suo delay e la sua durata → movimento indipendente
         spans.forEach(ch => {
+          const delay = Math.random() * 0.4;            // fino a 0,4s di ritardo
+          const dur = 2.4 + Math.random() * 0.8;        // tra 2,4s e 3,2s
+          ch.style.animationDelay = `${delay}s`;
+          ch.style.animationDuration = `${dur}s`;
           ch.classList.remove("flap-animate");
           void ch.offsetWidth;
           ch.classList.add("flap-animate");
