@@ -25,130 +25,84 @@
       margin: 0 auto;
     }
 
-    header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .title-block {
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      font-weight: 700;
-      line-height: 1.2;
+    .header { padding: 4px 2px 10px 2px; }
+    .header-title {
       font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.9;
     }
-
-    .subtitle {
+    .header-sub {
       font-size: 11px;
-      opacity: 0.7;
-      margin-top: 4px;
-      text-transform: none;
-      letter-spacing: 0.04em;
-    }
-
-    .audio-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 6px;
+      opacity: 0.5;
       margin-top: 2px;
     }
 
-    .audio-btn {
-      border-radius: 999px;
-      border: 1px solid #64748b;
-      background: #020617;
-      padding: 5px 10px;
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #e5e7eb;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .audio-btn.on {
-      border-color: #22c55e;
-      color: #bbf7d0;
-    }
-
-    .ios-audio-hint {
-      font-size: 10px;
-      opacity: 0.7;
-      margin-bottom: 8px;
-    }
-
     #gin-board {
-      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       margin-top: 4px;
       padding-bottom: 8px;
     }
 
     .gin-card {
-      background: #050509;
-      border-radius: 16px;
-      padding: 10px 12px 8px 12px;
-      border: 1px solid #1f2933;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
+      background: #0b0f18;
+      border-radius: 8px;
+      padding: 8px 10px 6px 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+      gap: 4px 8px;
+      border: 1px solid #202636;
     }
 
     .gin-name {
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 14px;
+      font-weight: 500;
+      text-transform: uppercase;
+      opacity: 0.96;
     }
 
     .gin-delta {
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 10px;
+      text-align: right;
+      opacity: 0.7;
     }
     .gin-delta.up { color: #4ade80; }
-    .gin-delta.down { color: #fb7185; }
-    .gin-delta.zero { color: #e5e7eb; }
+    .gin-delta.down { color: #f97373; }
 
     .price-row {
+      grid-column: 1 / span 2;
       display: flex;
       align-items: center;
-      gap: 6px;
-      margin-top: 4px;
+      gap: 4px;
+      margin-top: 2px;
     }
 
     .price-label {
-      font-size: 11px;
-      opacity: 0.75;
+      font-size: 10px;
+      opacity: 0.6;
     }
 
     .price-flap-wrapper {
       display: inline-flex;
-      gap: 3px;
+      gap: 2px;
     }
 
     .flap-char {
       position: relative;
-      width: 20px;
-      height: 24px;
-      border-radius: 3px;
+      width: 14px;
+      height: 18px;
+      border-radius: 2px;
       border: 1px solid #f5f5f5;
       background: #05070b;
       display: flex;
       align-items: center;
       justify-content: center;
       font-family: "SF Mono", monospace;
-      font-size: 14px;
-      font-weight: 600;
-      transform-origin: center center;
-      backface-visibility: hidden;
+      font-size: 12px;
     }
 
     .flap-char::before {
@@ -158,36 +112,25 @@
       right: 0;
       top: 50%;
       height: 1px;
-      background: #ffffff;
-      opacity: 0.8;
+      background: #f5f5f5;
+      opacity: 0.9;
     }
 
-    /* FLAP: 3 giri completi; durata e delay vengono variati via JS per ogni casella */
     .flap-char.flap-animate {
-      animation-name: flap-real;
-      animation-timing-function: linear;
-      animation-fill-mode: forwards;
+      animation: flap-spin 0.35s ease-out;
     }
 
-    @keyframes flap-real {
-      0%   { transform: rotateX(0deg); }
-      10%  { transform: rotateX(180deg); }
-      20%  { transform: rotateX(360deg); }
-      30%  { transform: rotateX(540deg); }
-      40%  { transform: rotateX(720deg); }
-      50%  { transform: rotateX(900deg); }
-      60%  { transform: rotateX(1080deg); }
-      70%  { transform: rotateX(1260deg); }
-      80%  { transform: rotateX(1440deg); }
-      90%  { transform: rotateX(1620deg); }
-      100% { transform: rotateX(1080deg); } /* 3 giri -> torna dritto */
+    @keyframes flap-spin {
+      0% { transform: rotateX(0deg); }
+      40% { transform: rotateX(75deg); }
+      100% { transform: rotateX(0deg); }
     }
 
     .footer-line {
       font-size: 9px;
-      opacity: 0.4;
+      opacity: 0.35;
       text-align: right;
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     .status-badge {
@@ -200,130 +143,116 @@
       background: rgba(15,23,42,0.9);
       border: 1px solid rgba(148,163,184,0.6);
       color: #e5e7eb;
-      opacity: 0.7;
-      display: inline-block;
+      opacity: 0.65;
     }
     .status-badge.offline { border-color: rgba(248,113,113,0.65); }
+
+    #audio-toggle {
+      position: fixed;
+      right: 8px;
+      bottom: 40px;
+      padding: 6px 10px;
+      background: #0b0f18;
+      border: 1px solid #444c5c;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #f5f5f5;
+      opacity: 0.85;
+    }
   </style>
 </head>
 
 <body>
   <div class="app">
-    <header>
-      <div>
-        <div class="title-block">La Borsa del Gin del Molo89</div>
-        <div class="subtitle">Molo 89 – Ferrara</div>
-      </div>
-      <div class="audio-wrapper">
-        <button id="audio-toggle" class="audio-btn">Audio CLACK OFF</button>
-      </div>
+    <header class="header">
+      <div class="header-title">Borsa del Gin</div>
+      <div class="header-sub">Molo 89 – Ferrara</div>
     </header>
-
-    <div id="ios-hint" class="ios-audio-hint">
-      Tocca il pulsante per attivare il suono del flapping.
-    </div>
 
     <main id="gin-board"></main>
 
     <div class="footer-line" id="last-update-label"></div>
-
-    <div id="status-badge" class="status-badge">Online</div>
   </div>
 
+  <div id="status-badge" class="status-badge">Online</div>
+  <button id="audio-toggle">Audio clack ON</button>
+
   <script>
+    // URL WebApp
     const DEFAULT_DATA_URL =
       "https://script.google.com/macros/s/AKfycbx5NTGC8Wjco6Y0Nm3dHFgJ1AiEBEj9pPyS7pRcdx2aoCKluCE-hEGu6Zi4m6_hmiap5w/exec";
 
-    // --- AUDIO: clack meccanico basato su rumore ---
+    /* ---------- AUDIO CLACK ---------- */
+
     let audioCtx = null;
-    let audioEnabled = false;
+    let audioEnabled = true;
+    let audioPrimed = false;
 
     function ensureAudioContext() {
-      if (!("AudioContext" in window || "webkitAudioContext" in window)) return;
       if (!audioCtx) {
         const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
         audioCtx = new AC();
       }
-      if (audioCtx.state === "suspended") audioCtx.resume();
-    }
-
-    function playNoiseClick(startAt) {
-      const ctx = audioCtx;
-      const duration = 0.04;
-      const sampleRate = ctx.sampleRate;
-      const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
-      const data = buffer.getChannelData(0);
-
-      for (let i = 0; i < data.length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length / 3));
-      }
-
-      const src = ctx.createBufferSource();
-      src.buffer = buffer;
-
-      const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.0, startAt);
-      gain.gain.linearRampToValueAtTime(0.6, startAt + 0.005);
-      gain.gain.exponentialRampToValueAtTime(0.001, startAt + duration);
-
-      const filter = ctx.createBiquadFilter();
-      filter.type = "bandpass";
-      filter.frequency.value = 1200;
-      filter.Q.value = 1.5;
-
-      src.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-
-      src.start(startAt);
-      src.stop(startAt + duration);
-    }
-
-    function playClackSequence(durationMs = 2800) {
-      if (!audioEnabled || !audioCtx) return;
-
-      const ctx = audioCtx;
-      const base = ctx.currentTime;
-      const interval = 0.11;
-      const hits = Math.floor(durationMs / 1000 / interval);
-
-      for (let i = 0; i < hits; i++) {
-        playNoiseClick(base + i * interval);
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
       }
     }
 
-    const audioBtn = document.getElementById("audio-toggle");
-    const iosHint = document.getElementById("ios-hint");
-
-    audioBtn.addEventListener("click", () => {
+    function playClack() {
+      if (!audioEnabled) return;
       ensureAudioContext();
-      audioEnabled = !audioEnabled;
-      if (audioEnabled) {
-        audioBtn.classList.add("on");
-        audioBtn.textContent = "Audio CLACK ON";
-        iosHint.textContent = "";
-        playClackSequence(600);
-      } else {
-        audioBtn.classList.remove("on");
-        audioBtn.textContent = "Audio CLACK OFF";
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const now = audioCtx.currentTime;
+
+      osc.frequency.value = 900;
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.07);
+    }
+
+    // primo tap per sbloccare audio su iOS
+    document.addEventListener("touchstart", function () {
+      if (!audioPrimed) {
+        ensureAudioContext();
+        audioPrimed = true;
+      }
+    }, { passive: true, once: true });
+
+    // quando torni visibile, se audio ON, riprendi il context
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && audioEnabled) {
+        ensureAudioContext();
       }
     });
 
-    function firstInteraction() {
-      iosHint.textContent = "";
-      window.removeEventListener("touchstart", firstInteraction);
-      window.removeEventListener("click", firstInteraction);
-    }
-    window.addEventListener("touchstart", firstInteraction, { once: true });
-    window.addEventListener("click", firstInteraction, { once: true });
+    const audioToggleBtn = document.getElementById("audio-toggle");
+    audioToggleBtn.addEventListener("click", function () {
+      audioEnabled = !audioEnabled;
+      if (audioEnabled) {
+        ensureAudioContext();
+        audioToggleBtn.textContent = "Audio clack ON";
+      } else {
+        audioToggleBtn.textContent = "Audio clack OFF";
+      }
+    });
 
-    // --- FETCH DATI ---
+    /* ---------- DATI & RENDER ---------- */
+
     function getQueryParams() {
       const p = {};
       const q = window.location.search.substring(1);
       if (!q) return p;
-      q.split("&").forEach(part => {
-        const [k, v] = part.split("=");
+      q.split("&").forEach(function (part) {
+        const kv = part.split("=");
+        const k = kv[0]; const v = kv[1];
         if (!k) return;
         p[decodeURIComponent(k)] = decodeURIComponent(v || "");
       });
@@ -336,132 +265,39 @@
       return DEFAULT_DATA_URL;
     }
 
-    function fetchWithTimeout(url, timeout = 10000) {
-      return new Promise((resolve, reject) => {
-        const controller = new AbortController();
-        const t = setTimeout(() => {
-          controller.abort();
-          reject(new Error("Timeout"));
-        }, timeout);
-
-        fetch(url, { cache: "no-store", signal: controller.signal })
-          .then(r => {
-            clearTimeout(t);
-            if (r.ok) resolve(r);
-            else reject(new Error("HTTP " + r.status));
-          })
-          .catch(e => {
-            clearTimeout(t);
-            reject(e);
-          });
-      });
-    }
-
-    async function fetchDataRetry(url) {
-      let lastErr;
-      for (let i = 0; i < 3; i++) {
-        try {
-          const r = await fetchWithTimeout(url, 10000);
-          return await r.json();
-        } catch (e) {
-          lastErr = e;
-          await new Promise(r => setTimeout(r, 1000));
-        }
-      }
-      throw lastErr;
-    }
-
-    const statusBadge = document.getElementById("status-badge");
-
-    function setBadge({ text, offline = false }) {
-      statusBadge.textContent = text;
-      statusBadge.classList.toggle("offline", offline);
-    }
-
+    // gestisce sia array diretto che {items:[...]}
     function normalizeData(json) {
-      if (Array.isArray(json)) {
-        return json.map(item => ({
-          name: String(item.name || "").trim(),
-          price: Number(item.price) || 0,
-          delta: Number(item.delta ?? item.change ?? 0) || 0
-        }));
+      if (Object.prototype.toString.call(json) === "[object Array]") {
+        return json;
       }
-      if (json && Array.isArray(json.items)) {
-        return json.items.map(item => ({
-          name: String(item.name || "").trim(),
-          price: Number(item.price) || 0,
-          delta: Number(item.delta ?? item.change ?? 0) || 0
-        }));
+      if (json && json.items && Object.prototype.toString.call(json.items) === "[object Array]") {
+        return json.items;
       }
       return [];
     }
 
-    // --- FLAP: numeri che girano per ~2.8s, ogni casella con delay/durata diversi ---
-    const FLAP_DURATION_MS = 2800;
-    const FLAP_TICK_MS = 40;
+    function setBadge(online) {
+      const el = document.getElementById("status-badge");
+      if (!el) return;
+      el.textContent = online ? "Online" : "Offline";
+      el.classList.toggle("offline", !online);
+    }
 
-    function flap() {
-      const wrappers = document.querySelectorAll(".price-flap-wrapper");
-      if (!wrappers.length) return;
-
-      wrappers.forEach(w => {
-        const finalText = w.dataset.final;
-        if (!finalText) return;
-
-        if (w._flapTimer) {
-          clearInterval(w._flapTimer);
-          w._flapTimer = null;
-        }
-
-        const spans = w.querySelectorAll(".flap-char");
-        const finalChars = finalText.split("");
-        const digits = "0123456789";
-
-        // ogni casella ha il suo delay e la sua durata → movimento indipendente
-        spans.forEach(ch => {
-          const delay = Math.random() * 0.4;            // fino a 0,4s di ritardo
-          const dur = 2.4 + Math.random() * 0.8;        // tra 2,4s e 3,2s
-          ch.style.animationDelay = `${delay}s`;
-          ch.style.animationDuration = `${dur}s`;
-          ch.classList.remove("flap-animate");
-          void ch.offsetWidth;
-          ch.classList.add("flap-animate");
-        });
-
-        const start = performance.now();
-
-        const timerId = setInterval(() => {
-          const now = performance.now();
-          const elapsed = now - start;
-
-          if (elapsed >= FLAP_DURATION_MS) {
-            spans.forEach((ch, i) => {
-              ch.textContent = finalChars[i] || "";
-            });
-            clearInterval(timerId);
-            w._flapTimer = null;
-            return;
-          }
-
-          spans.forEach((ch, i) => {
-            const current = finalChars[i] || " ";
-            if (current === "." || current === ",") {
-              ch.textContent = current;
-            } else {
-              ch.textContent = digits[Math.floor(Math.random() * digits.length)];
-            }
-          });
-        }, FLAP_TICK_MS);
-
-        w._flapTimer = timerId;
-      });
-
-      if (audioEnabled && audioCtx) {
-        playClackSequence(FLAP_DURATION_MS);
+    async function fetchData() {
+      const url = getDataUrl();
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const json = await res.json();
+        setBadge(true);
+        return normalizeData(json);
+      } catch (e) {
+        console.error("Errore fetch dati:", e);
+        setBadge(false);
+        return [];
       }
     }
 
-    // --- RENDER ---
     function render(data) {
       const board = document.getElementById("gin-board");
       board.innerHTML = "";
@@ -474,35 +310,32 @@
         empty.textContent = "Nessun dato disponibile.";
         board.appendChild(empty);
       } else {
-        data.forEach(item => {
+        data.forEach(function (item) {
           const card = document.createElement("div");
           card.className = "gin-card";
 
-          const header = document.createElement("div");
-          header.className = "card-header";
-
           const name = document.createElement("div");
           name.className = "gin-name";
-          name.textContent = item.name || "Gin";
+          name.textContent = item.name;
 
           const delta = document.createElement("div");
           delta.className = "gin-delta";
-
-          const d = Number(item.delta);
+          var dRaw = 0;
+          if (item.delta !== undefined && item.delta !== null && item.delta !== "") {
+            dRaw = Number(item.delta);
+          } else if (item.change !== undefined && item.change !== null && item.change !== "") {
+            dRaw = Number(item.change);
+          }
+          const d = isNaN(dRaw) ? 0 : dRaw;
           if (d > 0) {
             delta.classList.add("up");
-            delta.textContent = `▲ +${d.toFixed(1)}%`;
+            delta.textContent = "▲ +" + d.toFixed(1) + "%";
           } else if (d < 0) {
             delta.classList.add("down");
-            delta.textContent = `▼ ${d.toFixed(1)}%`;
+            delta.textContent = "▼ " + d.toFixed(1) + "%";
           } else {
-            delta.classList.add("zero");
-            delta.textContent = "±0.0%";
+            delta.textContent = "– 0.0%";
           }
-
-          header.appendChild(name);
-          header.appendChild(delta);
-          card.appendChild(header);
 
           const priceRow = document.createElement("div");
           priceRow.className = "price-row";
@@ -514,10 +347,7 @@
           const wrap = document.createElement("div");
           wrap.className = "price-flap-wrapper";
 
-          const priceText = Number(item.price).toFixed(2);
-          wrap.dataset.final = priceText;
-
-          priceText.split("").forEach(c => {
+          (Number(item.price).toFixed(2) + "").split("").forEach(function (c) {
             const ch = document.createElement("span");
             ch.className = "flap-char";
             ch.textContent = c;
@@ -527,39 +357,53 @@
           priceRow.appendChild(label);
           priceRow.appendChild(wrap);
 
+          card.appendChild(name);
+          card.appendChild(delta);
           card.appendChild(priceRow);
+
           board.appendChild(card);
         });
       }
 
       document.getElementById("last-update-label").textContent =
         "Ultimo aggiornamento: " +
-        new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+        new Date().toLocaleTimeString("it-IT", {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
     }
 
-    // --- LOADBOARD ---
+    function flap() {
+      const wrappers = document.querySelectorAll(".price-flap-wrapper");
+      wrappers.forEach(function (w) {
+        const cs = w.querySelectorAll(".flap-char");
+        if (!cs.length) return;
+        const count = Math.max(1, Math.min(3, Math.round(Math.random() * cs.length)));
+
+        let clackDone = false;
+        for (let i = 0; i < count; i++) {
+          const ch = cs[Math.floor(Math.random() * cs.length)];
+          ch.classList.remove("flap-animate");
+          void ch.offsetWidth;
+          ch.classList.add("flap-animate");
+          if (!clackDone) {
+            playClack();
+            clackDone = true;
+          }
+        }
+      });
+    }
+
     async function loadBoard() {
-      const url = getDataUrl();
-
-      try {
-        const json = await fetchDataRetry(url);
-        const data = normalizeData(json);
-
-        render(data);
-        flap(); // effetto all'arrivo dei dati
-
-        setBadge({ text: "Online", offline: false });
-      } catch (e) {
-        console.error("Errore caricamento dati:", e);
-        render([]);
-        setBadge({ text: "Errore dati", offline: true });
-      }
+      const data = await fetchData();
+      render(data);
+      flap(); // piccolo flap subito dopo il primo render
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      loadBoard();
-      setInterval(loadBoard, 60000);   // dati ogni 60s
-      setInterval(flap, 120000);      // flap “di scena” ogni 2 minuti
+    document.addEventListener("DOMContentLoaded", function () {
+      loadBoard();                    // subito
+      setInterval(loadBoard, 60000);  // ogni 60s ricarica dati
+      setInterval(flap, 120000);      // ogni 120s flap + clack
     });
   </script>
 </body>
