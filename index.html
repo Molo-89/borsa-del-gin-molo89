@@ -2,9 +2,8 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Borsa del Gin – Molo 89</title>
+  <title>Test Borsa del Gin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -14,280 +13,22 @@
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
         "Helvetica Neue", Arial, sans-serif;
     }
-    body { display: flex; flex-direction: column; padding: 12px; }
-
-    .header { padding: 4px 2px 10px 2px; }
-    .header-title {
-      font-size: 18px; font-weight: 600;
-      letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9;
-    }
-    .header-sub { font-size: 11px; opacity: 0.5; margin-top: 2px; }
-
-    #gin-board {
-      flex: 1; display: flex; flex-direction: column;
-      gap: 8px; margin-top: 4px; padding-bottom: 8px;
-    }
-
-    .gin-card {
-      background: #0b0f18;
-      border-radius: 8px;
-      padding: 8px 10px 6px 10px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      grid-template-rows: auto auto;
-      gap: 4px 8px;
-      border: 1px solid #202636;
-    }
-
-    .gin-name {
-      font-size: 14px; font-weight: 500;
-      text-transform: uppercase; opacity: 0.96;
-    }
-    .gin-delta { font-size: 10px; text-align: right; opacity: 0.7; }
-    .gin-delta.up { color: #4ade80; }
-    .gin-delta.down { color: #f97373; }
-
-    .price-row {
-      grid-column: 1 / span 2;
-      display: flex; align-items: center; gap: 4px; margin-top: 2px;
-    }
-
-    .price-label { font-size: 10px; opacity: 0.6; }
-
-    .price-flap-wrapper { display: inline-flex; gap: 2px; }
-
-    .flap-char {
-      position: relative; width: 14px; height: 18px;
-      border-radius: 2px; border: 1px solid #f5f5f5;
-      background: #05070b;
-      display: flex; align-items: center; justify-content: center;
-      font-family: "SF Mono", monospace; font-size: 12px;
-    }
-
-    .flap-char::before {
-      content: ""; position: absolute; left: 0; right: 0; top: 50%;
-      height: 1px; background: #f5f5f5; opacity: 0.9;
-    }
-
-    .flap-char.flap-animate { animation: flap-spin 0.35s ease-out; }
-    @keyframes flap-spin {
-      0% { transform: rotateX(0deg); }
-      40% { transform: rotateX(75deg); }
-      100% { transform: rotateX(0deg); }
-    }
-
-    .footer-line {
-      font-size: 9px; opacity: 0.35;
-      text-align: right; margin-top: 4px;
-    }
-
-    .status-badge {
-      position: fixed; right: 8px; bottom: 8px;
-      font-size: 9px; padding: 2px 6px;
-      border-radius: 999px; background: rgba(15,23,42,0.9);
-      border: 1px solid rgba(148,163,184,0.6);
-      color: #e5e7eb; opacity: 0.65; display:none;
-    }
-    .status-badge.offline { border-color: rgba(248,113,113,0.65); }
-    .status-badge.demo { border-color: rgba(96,165,250,0.8); }
+    body { padding: 16px; }
+    h1 { font-size: 20px; margin-bottom: 8px; }
+    #status { margin-top: 12px; font-size: 14px; }
   </style>
 </head>
-
 <body>
-  <header class="header">
-    <div class="header-title">Borsa del Gin</div>
-    <div class="header-sub">Molo 89 – Ferrara</div>
-  </header>
+  <h1>Test Borsa del Gin</h1>
+  <div>Se vedi cambiare il testo sotto, JavaScript sta funzionando.</div>
 
-  <main id="gin-board"></main>
-
-  <div class="footer-line" id="last-update-label"></div>
-
-  <div id="status-badge" class="status-badge"></div>
+  <p id="status">In attesa di JavaScript…</p>
 
   <script>
-    // URL di default della tua Web App Google Apps Script
-    const DEFAULT_DATA_URL =
-      "https://script.google.com/macros/s/AKfycbx5NTGC8Wjco6Y0Nm3dHFgJ1AiEBEj9pPyS7pRcdx2aoCKluCE-hEGu6Zi4m6_hmiap5w/exec";
-
-    // 🔹 Legge i parametri dopo il "?" (es. ?src=...)
-    function getQueryParams() {
-      const p = {};
-      const q = window.location.search.substring(1);
-      if (!q) return p;
-      q.split("&").forEach(part => {
-        const [k, v] = part.split("=");
-        if (!k) return;
-        p[decodeURIComponent(k)] = decodeURIComponent(v || "");
-      });
-      return p;
-    }
-
-    // 🔹 Decide da dove prendere i dati
-    // - Se c'è ?src= usa quello
-    // - Se non c'è, usa DEFAULT_DATA_URL
-    function getDataUrl() {
-      const params = getQueryParams();
-      if (params.src) {
-        return params.src;
-      }
-      return DEFAULT_DATA_URL;
-    }
-
-    // 🔹 Fetch con timeout
-    function fetchWithTimeout(url, timeout = 10000) {
-      return new Promise((resolve, reject) => {
-        const controller = new AbortController();
-        const t = setTimeout(() => {
-          controller.abort();
-          reject(new Error("Timeout"));
-        }, timeout);
-
-        fetch(url, { cache: "no-store", signal: controller.signal })
-          .then(r => {
-            clearTimeout(t);
-            if (r.ok) {
-              resolve(r);
-            } else {
-              reject(new Error("HTTP " + r.status));
-            }
-          })
-          .catch(e => {
-            clearTimeout(t);
-            reject(e);
-          });
-      });
-    }
-
-    // 🔹 Riprova il fetch fino a 3 volte
-    async function fetchDataRetry(url) {
-      let lastErr;
-      for (let i = 0; i < 3; i++) {
-        try {
-          const r = await fetchWithTimeout(url, 10000);
-          return await r.json();
-        } catch (e) {
-          lastErr = e;
-          await new Promise(r => setTimeout(r, 1000));
-        }
-      }
-      throw lastErr;
-    }
-
-    // 🔹 Mostra il badge in basso a destra
-    function setBadge({ text, offline = false, demo = false }) {
-      const el = document.getElementById("status-badge");
-      el.textContent = text;
-      el.classList.toggle("offline", offline);
-      el.classList.toggle("demo", demo);
-      el.style.display = "inline-block";
-    }
-
-    // 🔹 Effetto flap sui numeri
-    function flap() {
-      document.querySelectorAll(".price-flap-wrapper").forEach(w => {
-        const cs = w.querySelectorAll(".flap-char");
-        if (!cs.length) return;
-        const count = Math.max(1, Math.min(3, Math.round(Math.random() * cs.length)));
-        for (let i = 0; i < count; i++) {
-          const ch = cs[Math.floor(Math.random() * cs.length)];
-          ch.classList.remove("flap-animate");
-          void ch.offsetWidth; // forza il reflow per riavviare l'animazione
-          ch.classList.add("flap-animate");
-        }
-      });
-    }
-
-    // 🔹 Disegna le card dei gin
-    function render(data) {
-      const board = document.getElementById("gin-board");
-      board.innerHTML = "";
-
-      if (!data || !data.length) {
-        const empty = document.createElement("div");
-        empty.style.fontSize = "11px";
-        empty.style.opacity = "0.5";
-        empty.style.marginTop = "8px";
-        empty.textContent = "Nessun dato disponibile.";
-        board.appendChild(empty);
-      } else {
-        data.forEach((item) => {
-          const card = document.createElement("div");
-          card.className = "gin-card";
-
-          const name = document.createElement("div");
-          name.className = "gin-name";
-          name.textContent = item.name;
-
-          const delta = document.createElement("div");
-          delta.className = "gin-delta";
-          const d = Number(item.delta);
-          if (d > 0) {
-            delta.classList.add("up");
-            delta.textContent = "▲ +" + d.toFixed(1) + "%";
-          } else if (d < 0) {
-            delta.classList.add("down");
-            delta.textContent = "▼ " + d.toFixed(1) + "%";
-          } else {
-            delta.textContent = "– 0.0%";
-          }
-
-          const priceRow = document.createElement("div");
-          priceRow.className = "price-row";
-
-          const label = document.createElement("div");
-          label.className = "price-label";
-          label.textContent = "Prezzo ora";
-
-          const wrap = document.createElement("div");
-          wrap.className = "price-flap-wrapper";
-
-          (Number(item.price).toFixed(2) + "").split("").forEach(c => {
-            const ch = document.createElement("span");
-            ch.className = "flap-char";
-            ch.textContent = c;
-            wrap.appendChild(ch);
-          });
-
-          priceRow.appendChild(label);
-          priceRow.appendChild(wrap);
-
-          card.appendChild(name);
-          card.appendChild(delta);
-          card.appendChild(priceRow);
-
-          board.appendChild(card);
-        });
-      }
-
-      document.getElementById("last-update-label").textContent =
-        "Ultimo aggiornamento: " +
-        new Date().toLocaleTimeString("it-IT", {
-          hour: "2-digit",
-          minute: "2-digit"
-        });
-    }
-
-    // 🔹 Carica i dati dalla Web App e aggiorna la board
-    async function loadBoard() {
-      const url = getDataUrl();
-
-      try {
-        const json = await fetchDataRetry(url);
-        render(json);
-        setBadge({ text: "Online", offline: false });
-      } catch (e) {
-        console.error("Errore caricamento dati:", e);
-        render([]);
-        setBadge({ text: "Errore dati", offline: true });
-      }
-    }
-
-    // 🔹 Avvio quando la pagina è pronta
-    document.addEventListener("DOMContentLoaded", () => {
-      loadBoard();                    // subito
-      setInterval(loadBoard, 60000);  // ogni 60s ricarica dati
-      setInterval(flap, 120000);      // ogni 120s anima i flap
+    // Questo deve cambiare il testo a "JS FUNZIONA"
+    document.addEventListener("DOMContentLoaded", function () {
+      var statusEl = document.getElementById("status");
+      statusEl.textContent = "✅ JS FUNZIONA su questo dispositivo.";
     });
   </script>
 </body>
