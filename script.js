@@ -14,12 +14,13 @@ let prevValues = [];
 let firstLoad = true;
 let isAnimating = false;
 let pendingTimers = [];
+let audioWasEverRunning = false; // per capire se l'audio ha mai funzionato
 
 const list      = document.getElementById("list");
 const clackBtn  = document.getElementById("clackBtn");
-const ambBtn    = document.getElementById("ambBtn");     // pulsante ambient (non usato più)
+const ambBtn    = document.getElementById("ambBtn");     // non usato più (pulsante ambient)
 const hint      = document.getElementById("hint");
-const ambientEl = document.getElementById("ambient");    // audio ambient (non usato più)
+const ambientEl = document.getElementById("ambient");    // non usato più (audio ambient)
 
 function showError(msg){
   let el = document.getElementById("err");
@@ -82,26 +83,34 @@ function updateButtons(){
 function updateAudioHint(){
   if (!hint) return;
 
-  // Se l'utente ha spento il clack manualmente, non rompiamo le scatole
+  // Se l'utente ha spento il clack manualmente, non mostriamo niente
   if (!clackOn){
     hint.style.display = "none";
     return;
   }
 
-  // Nessun AudioContext ancora creato: suggeriamo il tap
+  // Nessun AudioContext ancora creato o mai attivato: messaggio base
   if (!audioCtx){
     hint.style.display = "block";
-    hint.textContent = "Tocca lo schermo per attivare l'audio della Borsa del Gin.";
+    hint.textContent = "Tocca lo schermo per attivare l'audio del clack.";
     return;
   }
 
-  // AudioContext esiste ma è sospeso (tipico di iOS dopo inattività)
-  if (audioCtx.state === "suspended"){
-    hint.style.display = "block";
+  if (audioCtx.state === "running"){
+    // L'audio è attivo
+    audioWasEverRunning = true;
+    hint.style.display = "none";
+    return;
+  }
+
+  // Audio non running (suspended, interrupted, ecc.)
+  hint.style.display = "block";
+  if (audioWasEverRunning){
+    // Era già partito e iOS lo ha sospeso
     hint.textContent = "Audio sospeso da iOS — tocca lo schermo per riattivare il clack.";
   } else {
-    // Audio attivo: nascondi il messaggio
-    hint.style.display = "none";
+    // Non è mai partito davvero
+    hint.textContent = "Tocca lo schermo per attivare l'audio del clack.";
   }
 }
 
@@ -255,7 +264,6 @@ async function tick(){
 // Ruota le cifre a schermo con la stessa animazione
 // ----------------------------------------------------
 function periodicFlap(){
-  // se sta già animando un cambio vero o è il primo load, non facciamo nulla
   if (isAnimating || firstLoad) return;
   if (!list) return;
 
@@ -264,7 +272,6 @@ function periodicFlap(){
 
   let maxCols = 0;
 
-  // calcoliamo il numero massimo di "tile" per card
   cards.forEach(card => {
     const tiles = card.querySelectorAll(".tiles .tile");
     if (tiles.length > maxCols) maxCols = tiles.length;
@@ -304,7 +311,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
       try { a.currentTime = 0; } catch(e){}
       a.removeAttribute("src");
       try { a.load(); } catch(e){}
-      // opzionale: rimuoviamo proprio il nodo dal DOM
       if (a.parentElement) {
         a.parentElement.removeChild(a);
       }
