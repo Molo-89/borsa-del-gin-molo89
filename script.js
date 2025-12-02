@@ -17,9 +17,9 @@ let pendingTimers = [];
 
 const list      = document.getElementById("list");
 const clackBtn  = document.getElementById("clackBtn");
-const ambBtn    = document.getElementById("ambBtn");
+const ambBtn    = document.getElementById("ambBtn");     // ora inutilizzato (pulsante ambient)
 const hint      = document.getElementById("hint");
-const ambientEl = document.getElementById("ambient");
+const ambientEl = document.getElementById("ambient");    // ora inutilizzato (audio di sottofondo)
 
 function showError(msg){
   let el = document.getElementById("err");
@@ -75,10 +75,33 @@ function updateButtons(){
     clackBtn.setAttribute("aria-pressed", String(clackOn));
     clackBtn.textContent = clackOn ? "Audio CLACK ON" : "Audio CLACK OFF";
   }
-  if (ambBtn){
-    const ambOn = !ambientEl.paused;
-    ambBtn.setAttribute("aria-pressed", String(ambOn));
-    ambBtn.textContent = ambOn ? "Ambient ON" : "Ambient OFF";
+  updateAudioHint();
+}
+
+// Messaggio per quando l'audio è sospeso da iOS / browser
+function updateAudioHint(){
+  if (!hint) return;
+
+  // Se l'utente ha spento il clack manualmente, non rompiamo le scatole
+  if (!clackOn){
+    hint.style.display = "none";
+    return;
+  }
+
+  // Nessun AudioContext ancora creato: suggeriamo il tap
+  if (!audioCtx){
+    hint.style.display = "block";
+    hint.textContent = "Tocca lo schermo per attivare l'audio della Borsa del Gin.";
+    return;
+  }
+
+  // AudioContext esiste ma è sospeso (tipico di iOS dopo inattività)
+  if (audioCtx.state === "suspended"){
+    hint.style.display = "block";
+    hint.textContent = "Audio sospeso da iOS — tocca lo schermo per riattivare il clack.";
+  } else {
+    // Audio attivo: nascondi il messaggio
+    hint.style.display = "none";
   }
 }
 
@@ -271,15 +294,23 @@ function periodicFlap(){
 }
 
 document.addEventListener("DOMContentLoaded", ()=>{
-  tryInitAudio();
+  // Nessun audio ambient: se esistono, li spegniamo e nascondiamo
   if (ambientEl){
-    ambientEl.volume = 0.18;
-    ambientEl.play().catch(()=>{});
+    try{
+      ambientEl.pause();
+      ambientEl.src = "";
+    }catch(e){}
   }
+  if (ambBtn){
+    ambBtn.style.display = "none";
+  }
+
+  tryInitAudio();
   updateButtons();
 
   setInterval(()=>{
     tryInitAudio(true);
+    updateAudioHint();
   }, 25000);
 
   tick();
@@ -289,17 +320,19 @@ document.addEventListener("DOMContentLoaded", ()=>{
   setInterval(()=>periodicFlap(), 120000);
 });
 
+// ogni tocco/click prova a riattivare l'audio e aggiorna il messaggio
 ["touchstart","click"].forEach(evt=>{
   document.addEventListener(evt, ()=>{
-    if (ambientEl && ambientEl.paused){
-      ambientEl.play().catch(()=>{});
-    }
     tryInitAudio(true);
-    if (hint) hint.style.display="none";
-  }, { once:true });
+    updateAudioHint();
+  }, { passive:true });
 });
+
 document.addEventListener("visibilitychange", ()=>{
-  if (document.visibilityState === "visible") tryInitAudio(true);
+  if (document.visibilityState === "visible"){
+    tryInitAudio(true);
+    updateAudioHint();
+  }
 });
 
 if (clackBtn){
@@ -309,10 +342,7 @@ if (clackBtn){
     updateButtons();
   });
 }
-if (ambBtn){
-  ambBtn.addEventListener("click", ()=>{
-    if (ambientEl.paused) ambientEl.play().catch(()=>{});
-    else ambientEl.pause();
-    updateButtons();
-  });
-}
+
+// nessun listener per ambBtn: audio ambient eliminato
+
+
