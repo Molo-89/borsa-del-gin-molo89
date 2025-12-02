@@ -14,6 +14,7 @@ let prevValues = [];
 let firstLoad = true;
 let isAnimating = false;
 let pendingTimers = [];
+let lastData = null; // <-- memorizziamo l'ultimo JSON per il flap periodico
 
 const list      = document.getElementById("list");
 const clackBtn  = document.getElementById("clackBtn");
@@ -127,7 +128,8 @@ function rollDigits(tileEl, finalChar, durationMs, startDelay){
   }, startDelay);
 }
 
-function render(data){
+// forceAnimation = true => ruota anche se il prezzo non è cambiato
+function render(data, forceAnimation = false){
   try{
     if(!data||!Array.isArray(data.items)) throw new Error("JSON senza items[]");
   }catch(e){
@@ -185,7 +187,7 @@ function render(data){
     card.appendChild(priceWrap);
     frag.appendChild(card);
 
-    const changed  = firstLoad || priceStr !== (prevStr ?? "");
+    const changed  = forceAnimation || firstLoad || priceStr !== (prevStr ?? "");
     const duration = changed ? CONFIG.ROLL_MS : 0;
 
     curr.forEach((ch,k)=>{
@@ -221,34 +223,19 @@ async function tick(){
   if (isAnimating) return;
   try{
     const data = await fetchData();
-    render(data);
+    lastData = data;           // <-- salviamo l'ultimo risultato
+    render(data, false);       // animazione SOLO se cambia il prezzo
   }catch(e){
     showError(String(e));
   }
 }
 
-// ----------------------------
-// Flap periodico ogni 2 minuti
-// stessa animazione dei cambi prezzo
-// ----------------------------
+// --- Flap periodico ogni 2 minuti ---
+// Richiama render() con forceAnimation=true
 function periodicFlap(){
-  // se sta già animando un cambio prezzo vero, non disturbi
   if (isAnimating || firstLoad) return;
-  if (!list) return;
-
-  const cards = list.querySelectorAll(".card");
-  if (!cards.length) return;
-
-  cards.forEach(card => {
-    const tiles = card.querySelectorAll(".tile");
-    tiles.forEach((tile, k) => {
-      const current = tile.textContent || " ";
-      const finalChar = current === "" ? " " : current; // replica logica di render()
-      const duration = CONFIG.ROLL_MS;
-      const delay = k * 40;
-      rollDigits(tile, finalChar, duration - delay, delay);
-    });
-  });
+  if (!lastData) return;
+  render(lastData, true);
 }
 
 document.addEventListener("DOMContentLoaded", ()=>{
@@ -266,7 +253,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   tick();
   setInterval(()=>tick(), CONFIG.REFRESH_MS);
 
-  // ogni 2 minuti fai girare i numeri anche se il prezzo non è cambiato
+  // ogni 2 minuti, flap anche senza cambi di prezzo
   setInterval(()=>periodicFlap(), 120000);
 });
 
