@@ -39,10 +39,7 @@
       border: 1px solid #202636;
     }
 
-    .gin-name {
-      font-size: 14px; font-weight: 500;
-      text-transform: uppercase; opacity: 0.96;
-    }
+    .gin-name { font-size: 14px; font-weight: 500; text-transform: uppercase; opacity: 0.96; }
     .gin-delta { font-size: 10px; text-align: right; opacity: 0.7; }
     .gin-delta.up { color: #4ade80; }
     .gin-delta.down { color: #f97373; }
@@ -87,10 +84,11 @@
       font-size: 9px; padding: 2px 6px;
       border-radius: 999px; background: rgba(15,23,42,0.9);
       border: 1px solid rgba(148,163,184,0.6);
-      color: #e5e7eb; opacity: 0.65;
+      color: #e5e7eb; opacity: 0.65; display: inline-block;
     }
     .status-badge.offline { border-color: rgba(248,113,113,0.65); }
 
+    /* Bottone audio, vicino al badge */
     #audio-toggle {
       position: fixed;
       right: 8px;
@@ -121,10 +119,10 @@
 
   <script>
     // URL della tua Web App
-    const BASE_DATA_URL =
+    const DEFAULT_DATA_URL =
       "https://script.google.com/macros/s/AKfycbx5NTGC8Wjco6Y0Nm3dHFgJ1AiEBEj9pPyS7pRcdx2aoCKluCE-hEGu6Zi4m6_hmiap5w/exec";
 
-    /* -------------------- AUDIO CLACK -------------------- */
+    /* ---------------- AUDIO CLACK ---------------- */
 
     let audioCtx = null;
     let audioEnabled = true;
@@ -148,9 +146,9 @@
 
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-
-      osc.frequency.value = 900;               // timbro secco
       const now = audioCtx.currentTime;
+
+      osc.frequency.value = 900;
       gain.gain.setValueAtTime(0.22, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
 
@@ -160,23 +158,23 @@
       osc.stop(now + 0.07);
     }
 
-    // Primo tap dell’utente: sblocca l’audio su iOS
-    document.addEventListener("touchstart", () => {
+    // Primo tap per sbloccare audio su iOS
+    document.addEventListener("touchstart", function () {
       if (!audioPrimed) {
         ensureAudioContext();
         audioPrimed = true;
       }
     }, { passive: true, once: true });
 
-    // Quando torni nella pagina (iOS): riprendi l’audio se era ON
-    document.addEventListener("visibilitychange", () => {
+    // Quando torni nella pagina, se audio è ON, riprendi l’audio
+    document.addEventListener("visibilitychange", function () {
       if (!document.hidden && audioEnabled) {
         ensureAudioContext();
       }
     });
 
     const audioToggleBtn = document.getElementById("audio-toggle");
-    audioToggleBtn.addEventListener("click", () => {
+    audioToggleBtn.addEventListener("click", function () {
       audioEnabled = !audioEnabled;
       if (audioEnabled) {
         ensureAudioContext();
@@ -186,14 +184,15 @@
       }
     });
 
-    /* -------------------- FETCH & RENDER -------------------- */
+    /* ---------------- DATI & RENDER ---------------- */
 
     function getQueryParams() {
       const p = {};
       const q = window.location.search.substring(1);
       if (!q) return p;
-      q.split("&").forEach(part => {
-        const [k, v] = part.split("=");
+      q.split("&").forEach(function (part) {
+        const kv = part.split("=");
+        const k = kv[0]; const v = kv[1];
         if (!k) return;
         p[decodeURIComponent(k)] = decodeURIComponent(v || "");
       });
@@ -203,20 +202,16 @@
     function getDataUrl() {
       const params = getQueryParams();
       if (params.src) return params.src;
-      return BASE_DATA_URL;
+      return DEFAULT_DATA_URL;
     }
 
-    // Normalizza qualunque JSON arrivi:
-    //  - [ {name, price, delta}, ... ]
-    //  - { updated:..., items:[ {name, price, change}, ... ] }
+    // Gestisce sia array diretto che oggetto {items:[...]}
     function normalizeData(json) {
-      if (Array.isArray(json)) return json;
-      if (json && Array.isArray(json.items)) {
-        return json.items.map(it => ({
-          name: it.name,
-          price: it.price,
-          delta: it.delta ?? it.change ?? 0
-        }));
+      if (Object.prototype.toString.call(json) === "[object Array]") {
+        return json;
+      }
+      if (json && json.items && Object.prototype.toString.call(json.items) === "[object Array]") {
+        return json.items;
       }
       return [];
     }
@@ -255,7 +250,7 @@
         empty.textContent = "Nessun dato disponibile.";
         board.appendChild(empty);
       } else {
-        data.forEach(item => {
+        data.forEach(function (item) {
           const card = document.createElement("div");
           card.className = "gin-card";
 
@@ -265,7 +260,13 @@
 
           const delta = document.createElement("div");
           delta.className = "gin-delta";
-          const d = Number(item.delta ?? item.change ?? 0);
+          var dRaw = 0;
+          if (item.delta !== undefined && item.delta !== null && item.delta !== "") {
+            dRaw = Number(item.delta);
+          } else if (item.change !== undefined && item.change !== null && item.change !== "") {
+            dRaw = Number(item.change);
+          }
+          const d = isNaN(dRaw) ? 0 : dRaw;
           if (d > 0) {
             delta.classList.add("up");
             delta.textContent = "▲ +" + d.toFixed(1) + "%";
@@ -286,7 +287,7 @@
           const wrap = document.createElement("div");
           wrap.className = "price-flap-wrapper";
 
-          (Number(item.price).toFixed(2) + "").split("").forEach(c => {
+          (Number(item.price).toFixed(2) + "").split("").forEach(function (c) {
             const ch = document.createElement("span");
             ch.className = "flap-char";
             ch.textContent = c;
@@ -313,16 +314,22 @@
     }
 
     function flap() {
-      document.querySelectorAll(".price-flap-wrapper").forEach(w => {
+      const wrappers = document.querySelectorAll(".price-flap-wrapper");
+      wrappers.forEach(function (w) {
         const cs = w.querySelectorAll(".flap-char");
         if (!cs.length) return;
         const count = Math.max(1, Math.min(3, Math.round(Math.random() * cs.length)));
+
+        let clackDone = false;
         for (let i = 0; i < count; i++) {
           const ch = cs[Math.floor(Math.random() * cs.length)];
           ch.classList.remove("flap-animate");
           void ch.offsetWidth;
           ch.classList.add("flap-animate");
-          playClack();
+          if (!clackDone) {
+            playClack();
+            clackDone = true;
+          }
         }
       });
     }
@@ -330,10 +337,12 @@
     async function loadBoard() {
       const data = await fetchData();
       render(data);
+      // un piccolo flap subito dopo il primo render
+      flap();
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      loadBoard();                 // subito
+    document.addEventListener("DOMContentLoaded", function () {
+      loadBoard();                    // subito
       setInterval(loadBoard, 60000);  // ogni 60s ricarica dati
       setInterval(flap, 120000);      // ogni 120s flap + clack
     });
