@@ -147,6 +147,8 @@
       font-family: "SF Mono", monospace;
       font-size: 14px;
       font-weight: 600;
+      transform-origin: center center;
+      backface-visibility: hidden;
     }
 
     .flap-char::before {
@@ -160,23 +162,23 @@
       opacity: 0.8;
     }
 
-    /* === FLAP REALISTICO: ~2.2s, tanti giri veloci === */
+    /* === FLAP REALISTICO: ~2.8s, 3 giri completi, finale dritto === */
     .flap-char.flap-animate {
-      animation: flap-real 2.2s steps(12) forwards;
+      animation: flap-real 2.8s linear forwards;
     }
 
     @keyframes flap-real {
       0%   { transform: rotateX(0deg); }
-      10%  { transform: rotateX(90deg); }
-      20%  { transform: rotateX(180deg); }
-      30%  { transform: rotateX(270deg); }
-      40%  { transform: rotateX(360deg); }
-      50%  { transform: rotateX(450deg); }
-      60%  { transform: rotateX(540deg); }
-      70%  { transform: rotateX(630deg); }
-      80%  { transform: rotateX(720deg); }
-      90%  { transform: rotateX(810deg); }
-      100% { transform: rotateX(900deg); }
+      10%  { transform: rotateX(180deg); }
+      20%  { transform: rotateX(360deg); }
+      30%  { transform: rotateX(540deg); }
+      40%  { transform: rotateX(720deg); }
+      50%  { transform: rotateX(900deg); }
+      60%  { transform: rotateX(1080deg); }
+      70%  { transform: rotateX(1260deg); }
+      80%  { transform: rotateX(1440deg); }
+      90%  { transform: rotateX(1620deg); }
+      100% { transform: rotateX(1080deg); } /* 3 giri -> torna dritto */
     }
 
     .footer-line {
@@ -230,7 +232,7 @@
     const DEFAULT_DATA_URL =
       "https://script.google.com/macros/s/AKfycbx5NTGC8Wjco6Y0Nm3dHFgJ1AiEBEj9pPyS7pRcdx2aoCKluCE-hEGu6Zi4m6_hmiap5w/exec";
 
-    // --- AUDIO: clack meccanico, non bip ---
+    // --- AUDIO: clack meccanico basato su rumore ---
     let audioCtx = null;
     let audioEnabled = false;
 
@@ -243,33 +245,48 @@
       if (audioCtx.state === "suspended") audioCtx.resume();
     }
 
-    // sequenza di clack per tutta la durata del flap
-    function playClackSequence(durationMs = 2200) {
+    function playNoiseClick(startAt) {
+      const ctx = audioCtx;
+      const duration = 0.04; // 40ms
+      const sampleRate = ctx.sampleRate;
+      const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length / 3));
+      }
+
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0, startAt);
+      gain.gain.linearRampToValueAtTime(0.6, startAt + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.001, startAt + duration);
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = 1200;
+      filter.Q.value = 1.5;
+
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      src.start(startAt);
+      src.stop(startAt + duration);
+    }
+
+    function playClackSequence(durationMs = 2800) {
       if (!audioEnabled || !audioCtx) return;
 
-      const totalSeconds = durationMs / 1000;
-      const interval = 0.12; // ogni 120 ms
-      const hits = Math.floor(totalSeconds / interval);
-      const nowBase = audioCtx.currentTime;
+      const ctx = audioCtx;
+      const base = ctx.currentTime;
+      const interval = 0.11; // ogni 110ms circa
+      const hits = Math.floor(durationMs / 1000 / interval);
 
       for (let i = 0; i < hits; i++) {
-        const startAt = nowBase + i * interval;
-
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-
-        osc.type = "square";
-        osc.frequency.value = 320 + Math.random() * 60; // basso, meccanico
-
-        gain.gain.setValueAtTime(0.0, startAt);
-        gain.gain.linearRampToValueAtTime(0.35, startAt + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, startAt + 0.08);
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start(startAt);
-        osc.stop(startAt + 0.09);
+        playNoiseClick(base + i * interval);
       }
     }
 
@@ -283,14 +300,13 @@
         audioBtn.classList.add("on");
         audioBtn.textContent = "Audio CLACK ON";
         iosHint.textContent = "";
-        playClackSequence(600); // piccolo preview
+        playClackSequence(600); // piccolo assaggio
       } else {
         audioBtn.classList.remove("on");
         audioBtn.textContent = "Audio CLACK OFF";
       }
     });
 
-    // Primo tap/click: togliamo la frase se dà fastidio
     function firstInteraction() {
       iosHint.textContent = "";
       window.removeEventListener("touchstart", firstInteraction);
@@ -378,9 +394,9 @@
       return [];
     }
 
-    // --- FLAP: numeri che girano per 2.2s, poi si fermano sul prezzo ---
-    const FLAP_DURATION_MS = 2200;
-    const FLAP_TICK_MS = 70;
+    // --- FLAP: numeri che girano per 2.8s, poi si fermano sul prezzo ---
+    const FLAP_DURATION_MS = 2800;
+    const FLAP_TICK_MS = 40;
 
     function flap() {
       const wrappers = document.querySelectorAll(".price-flap-wrapper");
@@ -390,7 +406,6 @@
         const finalText = w.dataset.final;
         if (!finalText) return;
 
-        // cancella eventuale animazione precedente
         if (w._flapTimer) {
           clearInterval(w._flapTimer);
           w._flapTimer = null;
@@ -398,6 +413,7 @@
 
         const spans = w.querySelectorAll(".flap-char");
         const finalChars = finalText.split("");
+        const digits = "0123456789";
 
         // trigger animazione CSS
         spans.forEach(ch => {
@@ -407,14 +423,12 @@
         });
 
         const start = performance.now();
-        const digits = "0123456789";
 
         const timerId = setInterval(() => {
           const now = performance.now();
           const elapsed = now - start;
 
           if (elapsed >= FLAP_DURATION_MS) {
-            // fermiamo i numeri sul valore giusto
             spans.forEach((ch, i) => {
               ch.textContent = finalChars[i] || "";
             });
@@ -423,7 +437,6 @@
             return;
           }
 
-          // durante i 2.2s: numeri che cambiano a raffica
           spans.forEach((ch, i) => {
             const current = finalChars[i] || " ";
             if (current === "." || current === ",") {
@@ -518,7 +531,7 @@
         new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
     }
 
-    // --- LOADBOARD: carica dati, renderizza, poi flap subito ---
+    // --- LOADBOARD ---
     async function loadBoard() {
       const url = getDataUrl();
 
@@ -527,7 +540,7 @@
         const data = normalizeData(json);
 
         render(data);
-        flap(); // effetto flap immediato all'arrivo dati
+        flap(); // effetto all'arrivo dei dati
 
         setBadge({ text: "Online", offline: false });
       } catch (e) {
@@ -539,7 +552,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       loadBoard();
-      setInterval(loadBoard, 60000);   // ricarica dati ogni 60s
+      setInterval(loadBoard, 60000);   // dati ogni 60s
       setInterval(flap, 120000);      // flap “di scena” ogni 2 minuti
     });
   </script>
