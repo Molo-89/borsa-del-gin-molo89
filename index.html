@@ -160,7 +160,7 @@
       opacity: 0.8;
     }
 
-    /* === FLAP REALISTICO === */
+    /* === FLAP REALISTICO: ~2.2s, tanti giri veloci === */
     .flap-char.flap-animate {
       animation: flap-real 2.2s steps(12) forwards;
     }
@@ -212,7 +212,6 @@
       </div>
       <div class="audio-wrapper">
         <button id="audio-toggle" class="audio-btn">Audio CLACK OFF</button>
-        <div class="refresh-icon">↻</div>
       </div>
     </header>
 
@@ -231,7 +230,7 @@
     const DEFAULT_DATA_URL =
       "https://script.google.com/macros/s/AKfycbx5NTGC8Wjco6Y0Nm3dHFgJ1AiEBEj9pPyS7pRcdx2aoCKluCE-hEGu6Zi4m6_hmiap5w/exec";
 
-    // --- AUDIO ---
+    // --- AUDIO: clack meccanico, non bip ---
     let audioCtx = null;
     let audioEnabled = false;
 
@@ -244,27 +243,33 @@
       if (audioCtx.state === "suspended") audioCtx.resume();
     }
 
-    // === CLACK REALISTICO ===
-    function playClack() {
+    // sequenza di clack per tutta la durata del flap
+    function playClackSequence(durationMs = 2200) {
       if (!audioEnabled || !audioCtx) return;
 
-      for (let i = 0; i < 6; i++) {
+      const totalSeconds = durationMs / 1000;
+      const interval = 0.12; // ogni 120 ms
+      const hits = Math.floor(totalSeconds / interval);
+      const nowBase = audioCtx.currentTime;
+
+      for (let i = 0; i < hits; i++) {
+        const startAt = nowBase + i * interval;
+
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        const now = audioCtx.currentTime + i * 0.05;
 
         osc.type = "square";
-        osc.frequency.value = 300 + Math.random() * 80;
+        osc.frequency.value = 320 + Math.random() * 60; // basso, meccanico
 
-        gain.gain.setValueAtTime(0.0, now);
-        gain.gain.linearRampToValueAtTime(0.35, now + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        gain.gain.setValueAtTime(0.0, startAt);
+        gain.gain.linearRampToValueAtTime(0.35, startAt + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, startAt + 0.08);
 
         osc.connect(gain);
         gain.connect(audioCtx.destination);
 
-        osc.start(now);
-        osc.stop(now + 0.08);
+        osc.start(startAt);
+        osc.stop(startAt + 0.09);
       }
     }
 
@@ -278,13 +283,14 @@
         audioBtn.classList.add("on");
         audioBtn.textContent = "Audio CLACK ON";
         iosHint.textContent = "";
-        playClack();
+        playClackSequence(600); // piccolo preview
       } else {
         audioBtn.classList.remove("on");
         audioBtn.textContent = "Audio CLACK OFF";
       }
     });
 
+    // Primo tap/click: togliamo la frase se dà fastidio
     function firstInteraction() {
       iosHint.textContent = "";
       window.removeEventListener("touchstart", firstInteraction);
@@ -300,6 +306,7 @@
       if (!q) return p;
       q.split("&").forEach(part => {
         const [k, v] = part.split("=");
+        if (!k) return;
         p[decodeURIComponent(k)] = decodeURIComponent(v || "");
       });
       return p;
@@ -354,22 +361,85 @@
     }
 
     function normalizeData(json) {
-      if (Array.isArray(json)) return json;
-      if (json && Array.isArray(json.items)) return json.items;
+      if (Array.isArray(json)) {
+        return json.map(item => ({
+          name: String(item.name || "").trim(),
+          price: Number(item.price) || 0,
+          delta: Number(item.delta ?? item.change ?? 0) || 0
+        }));
+      }
+      if (json && Array.isArray(json.items)) {
+        return json.items.map(item => ({
+          name: String(item.name || "").trim(),
+          price: Number(item.price) || 0,
+          delta: Number(item.delta ?? item.change ?? 0) || 0
+        }));
+      }
       return [];
     }
 
-    // --- FLAP ---
+    // --- FLAP: numeri che girano per 2.2s, poi si fermano sul prezzo ---
+    const FLAP_DURATION_MS = 2200;
+    const FLAP_TICK_MS = 70;
+
     function flap() {
-      document.querySelectorAll(".price-flap-wrapper").forEach(w => {
-        w.querySelectorAll(".flap-char").forEach(ch => {
+      const wrappers = document.querySelectorAll(".price-flap-wrapper");
+      if (!wrappers.length) return;
+
+      wrappers.forEach(w => {
+        const finalText = w.dataset.final;
+        if (!finalText) return;
+
+        // cancella eventuale animazione precedente
+        if (w._flapTimer) {
+          clearInterval(w._flapTimer);
+          w._flapTimer = null;
+        }
+
+        const spans = w.querySelectorAll(".flap-char");
+        const finalChars = finalText.split("");
+
+        // trigger animazione CSS
+        spans.forEach(ch => {
           ch.classList.remove("flap-animate");
           void ch.offsetWidth;
           ch.classList.add("flap-animate");
         });
+
+        const start = performance.now();
+        const digits = "0123456789";
+
+        const timerId = setInterval(() => {
+          const now = performance.now();
+          const elapsed = now - start;
+
+          if (elapsed >= FLAP_DURATION_MS) {
+            // fermiamo i numeri sul valore giusto
+            spans.forEach((ch, i) => {
+              ch.textContent = finalChars[i] || "";
+            });
+            clearInterval(timerId);
+            w._flapTimer = null;
+            return;
+          }
+
+          // durante i 2.2s: numeri che cambiano a raffica
+          spans.forEach((ch, i) => {
+            const current = finalChars[i] || " ";
+            if (current === "." || current === ",") {
+              ch.textContent = current;
+            } else {
+              ch.textContent = digits[Math.floor(Math.random() * digits.length)];
+            }
+          });
+        }, FLAP_TICK_MS);
+
+        w._flapTimer = timerId;
       });
 
-      if (audioEnabled) playClack();
+      if (audioEnabled && audioCtx) {
+        playClackSequence(FLAP_DURATION_MS);
+      }
     }
 
     // --- RENDER ---
@@ -377,59 +447,78 @@
       const board = document.getElementById("gin-board");
       board.innerHTML = "";
 
-      data.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "gin-card";
+      if (!data || !data.length) {
+        const empty = document.createElement("div");
+        empty.style.fontSize = "11px";
+        empty.style.opacity = "0.5";
+        empty.style.marginTop = "8px";
+        empty.textContent = "Nessun dato disponibile.";
+        board.appendChild(empty);
+      } else {
+        data.forEach(item => {
+          const card = document.createElement("div");
+          card.className = "gin-card";
 
-        const header = document.createElement("div");
-        header.className = "card-header";
+          const header = document.createElement("div");
+          header.className = "card-header";
 
-        const name = document.createElement("div");
-        name.className = "gin-name";
-        name.textContent = item.name || "Gin";
+          const name = document.createElement("div");
+          name.className = "gin-name";
+          name.textContent = item.name || "Gin";
 
-        const delta = document.createElement("div");
-        delta.className = "gin-delta";
+          const delta = document.createElement("div");
+          delta.className = "gin-delta";
 
-        const d = Number(item.delta);
-        if (d > 0) { delta.classList.add("up"); delta.textContent = `▲ +${d.toFixed(1)}%`; }
-        else if (d < 0) { delta.classList.add("down"); delta.textContent = `▼ ${d.toFixed(1)}%`; }
-        else { delta.classList.add("zero"); delta.textContent = "±0.0%"; }
+          const d = Number(item.delta);
+          if (d > 0) {
+            delta.classList.add("up");
+            delta.textContent = `▲ +${d.toFixed(1)}%`;
+          } else if (d < 0) {
+            delta.classList.add("down");
+            delta.textContent = `▼ ${d.toFixed(1)}%`;
+          } else {
+            delta.classList.add("zero");
+            delta.textContent = "±0.0%";
+          }
 
-        header.appendChild(name);
-        header.appendChild(delta);
-        card.appendChild(header);
+          header.appendChild(name);
+          header.appendChild(delta);
+          card.appendChild(header);
 
-        const priceRow = document.createElement("div");
-        priceRow.className = "price-row";
+          const priceRow = document.createElement("div");
+          priceRow.className = "price-row";
 
-        const label = document.createElement("div");
-        label.className = "price-label";
-        label.textContent = "Prezzo ora";
+          const label = document.createElement("div");
+          label.className = "price-label";
+          label.textContent = "Prezzo ora";
 
-        const wrap = document.createElement("div");
-        wrap.className = "price-flap-wrapper";
+          const wrap = document.createElement("div");
+          wrap.className = "price-flap-wrapper";
 
-        (Number(item.price).toFixed(2) + "").split("").forEach(c => {
-          const ch = document.createElement("span");
-          ch.className = "flap-char";
-          ch.textContent = c;
-          wrap.appendChild(ch);
+          const priceText = Number(item.price).toFixed(2);
+          wrap.dataset.final = priceText;
+
+          priceText.split("").forEach(c => {
+            const ch = document.createElement("span");
+            ch.className = "flap-char";
+            ch.textContent = c;
+            wrap.appendChild(ch);
+          });
+
+          priceRow.appendChild(label);
+          priceRow.appendChild(wrap);
+
+          card.appendChild(priceRow);
+          board.appendChild(card);
         });
-
-        priceRow.appendChild(label);
-        priceRow.appendChild(wrap);
-
-        card.appendChild(priceRow);
-        board.appendChild(card);
-      });
+      }
 
       document.getElementById("last-update-label").textContent =
         "Ultimo aggiornamento: " +
         new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
     }
 
-    // --- LOADBOARD COMPLETO ---
+    // --- LOADBOARD: carica dati, renderizza, poi flap subito ---
     async function loadBoard() {
       const url = getDataUrl();
 
@@ -438,7 +527,7 @@
         const data = normalizeData(json);
 
         render(data);
-        flap(); // FLAP SUBITO
+        flap(); // effetto flap immediato all'arrivo dati
 
         setBadge({ text: "Online", offline: false });
       } catch (e) {
@@ -450,8 +539,8 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       loadBoard();
-      setInterval(loadBoard, 60000);
-      setInterval(flap, 120000);
+      setInterval(loadBoard, 60000);   // ricarica dati ogni 60s
+      setInterval(flap, 120000);      // flap “di scena” ogni 2 minuti
     });
   </script>
 </body>
